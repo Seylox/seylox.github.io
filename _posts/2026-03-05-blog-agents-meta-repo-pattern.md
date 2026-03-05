@@ -17,7 +17,11 @@ At Anyline, we build mobile SDKs for optical character recognition — scanning 
 
 We needed a way to give our AI agents persistent context. Not just memory of what happened yesterday, but structured knowledge about *how our codebase works* — the kind of institutional knowledge that takes a human developer months to accumulate.
 
-What we built is what we now call the **agents meta-repository**: a dedicated repo that serves as an AI agent's knowledge base, orientation guide, and working memory for navigating a multi-repo codebase. This post explains the pattern, shows a real case study, and gives you everything you need to adopt it yourself.
+What we built is what we now call the **agents meta-repository**: a dedicated repo that serves as an AI agent's knowledge base, orientation guide, and working memory for navigating a multi-repo codebase.
+
+In practice, starting a new task now looks like this: I fire up an agent in our top-level workspace, give it a ticket number and tell it which product we're working on. The agent reads the meta-repo, orients itself, and we're off to the races. No exploration phase. No "which repo is the Flutter wrapper in again?" No re-reading of commit conventions. Just work.
+
+This post explains the pattern, shows a real case study, and gives you everything you need to adopt it yourself.
 
 ## Why Multi-Repo is Uniquely Hard for AI Agents
 
@@ -34,6 +38,20 @@ For those of us who have embraced (or inherited) multi-repo architectures, the c
 **Token waste.** Every session spent running `ls`, `find`, and `grep` to rediscover repository structure is tokens burned. At current pricing, this is real money. More importantly, it's real time — time the agent could spend actually solving your problem instead of figuring out where things are.
 
 **The monorepo temptation.** At this point, someone always suggests: "Just move to a monorepo." And yes, monorepos do solve some of these problems. They also introduce build complexity, access control challenges, CI blast radius concerns, and the need to coordinate releases across teams that may operate at very different cadences. Many organizations — ours included — have good reasons for keeping repositories separate. The agents meta-repository gives you monorepo-like ergonomics for your AI agents without restructuring your entire codebase.
+
+## Research, Plan, Execute — With Everything Written Down
+
+Before diving into the structure, there's a broader pattern worth mentioning that has worked extremely well for us when working with AI agents — not just in multi-repo contexts: **research, plan, execute**, with a strong emphasis on the planning phase, and everything written down.
+
+AI agents are fast. They can write code, run tests, create commits, and push branches at a pace that would make any developer jealous. But without a deliberate planning phase, that speed can work against you. An agent that jumps straight to implementation will produce *something* — but "something" and "the right thing" are not always the same.
+
+The pattern we've settled on is this: when starting any task of meaningful size, the agent first **researches** — reads relevant code, checks existing patterns, understands the current state. Then it **plans** — writes down what it intends to do, which files it will change, in what order, and why. Only then does it **execute**. The plan isn't a formality. It's the point where we can catch misunderstandings before they become wrong code in six repositories.
+
+And I want to be clear about one thing: this whole setup still requires experienced engineers at the wheel. The agent doesn't replace judgment — it gives you super powers. You still need someone who knows the codebase, understands the architecture, and can look at a plan and say "no, that merge order will break the Flutter build." The agent does the heavy lifting. The human steers, reviews, and takes final responsibility. We've found that this combination — experienced developer plus well-informed agent — is where the real velocity comes from.
+
+The agents meta-repo supercharges this pattern. The research phase is faster because the meta-repo tells the agent where to look. The planning phase is better because the agent knows the conventions and constraints. And the execution phase is more reliable because workflows document the right order of operations.
+
+Everything gets written down. Plans, decisions, progress, discoveries — all of it goes into the active-work tracking documents. Yes, this helps the agent remember, but the real benefit is for the humans: an auditable trail you can review, correct, and learn from. More on that shortly.
 
 ## The Pattern: Anatomy of an Agents Meta-Repo
 
@@ -77,9 +95,15 @@ This is the single file an agent reads first when entering your codebase. Think 
 - A **repository map**: a table listing every repo with its path, purpose, languages, and build system
 - **Quick-reference conventions**: commit format, branch naming, license key handling — the things an agent references constantly
 - **Links to deeper docs**: workflows, architecture, infrastructure guides
-- A **"living document" disclaimer**: the file explicitly tells agents to verify information before trusting it, because documentation drifts from reality
+- A **"living document" contract** built on three principles: **Verify**, **Update**, **Suggest**
 
-That last point is important. We've learned that the most dangerous documentation is documentation that *used to be correct*. By building the verification habit into the entry point itself, agents learn to trust-but-verify rather than blindly follow instructions.
+That last point deserves unpacking. Every AGENTS.md in our system opens with a prominent disclaimer that documentation may have drifted from reality, and instructs the agent to follow three principles:
+
+- **Verify** paths, commands, and conventions against actual repository state before relying on them
+- **Update** the documentation when inaccuracies are discovered
+- **Suggest** improvements based on session experiences
+
+You might think this sounds like defensive boilerplate. It's actually closer to an immune system. The most dangerous documentation is documentation that *used to be correct* — and in a fast-moving codebase, that's most documentation, given enough time. By building these three principles into the entry point itself, agents learn to treat the meta-repo as a starting point for investigation rather than gospel truth. And when they find something wrong, they fix it. The documentation maintains itself — not perfectly, but far better than documentation that nobody is responsible for updating.
 
 ### repos.yaml — Machine-Readable Config
 
@@ -119,7 +143,7 @@ Why bother with YAML when you have prose documentation? Because agents parse str
 
 The `conventions/` directory is where you document standards that apply across all repositories: commit message format, branch naming, release notes structure, and so on.
 
-The key insight is this: without a centralized conventions directory, every repository's agent documentation repeats the same rules. And repeated rules inevitably drift. Repository A says "always sign commits." Repository B says "sign commits with GPG." Repository C forgot to mention signing entirely. The meta-repo is the single source of truth. Per-repo documentation references it rather than duplicating it.
+Here's the thing: without a centralized conventions directory, every repository's agent documentation repeats the same rules. And repeated rules inevitably drift. Repository A says "always sign commits." Repository B says "sign commits with GPG." Repository C forgot to mention signing entirely. The meta-repo is the single source of truth. Per-repo documentation references it rather than duplicating it.
 
 ### Workflows — Playbooks for Complex Operations
 
@@ -135,11 +159,11 @@ The existence of these scripts means an agent doesn't have to invent its own app
 
 ## Closing the Loop: Tool Integration
 
-Here's where it gets interesting. The meta-repo doesn't just document what agents should *know* — it teaches them how to *act*.
+So far, everything we've described is passive — documentation the agent reads. But the meta-repo also teaches agents how to *act*.
 
 We've integrated our agents with every major tool in our development workflow:
 
-**CI pipeline integration.** Our agents query build status, inspect failed jobs, and read job logs using helper scripts wrapped around the GitLab CLI. When a pipeline fails, the agent doesn't just tell you it failed — it fetches the log, identifies the failing test, and starts debugging. The meta-repo documents exactly how to do this, including the annoying URL-encoding rules that GitLab's API requires for project paths.
+**CI pipeline integration.** Our agents query build status, inspect failed jobs, and read job logs using helper scripts wrapped around the GitLab CLI. When a pipeline fails, the agent fetches the log, identifies the failing test, and starts debugging — all without asking you to go look at the CI dashboard. The meta-repo documents exactly how to do this, including the annoying URL-encoding rules that GitLab's API requires for project paths.
 
 **Issue tracker integration.** Our agents create and update tickets, add comments, and even convert markdown to the issue tracker's native format (which, if you've ever dealt with Atlassian Document Format, you'll appreciate is non-trivial). The meta-repo includes scripts for all of this, plus a Python utility that handles the markdown conversion so agents don't have to figure out nested JSON document structures on the fly.
 
@@ -150,6 +174,10 @@ We've integrated our agents with every major tool in our development workflow:
 **Chat integration.** This is the newest addition: agents can read and post to Slack channels. We've even documented a structured format for release announcements — the agent posts a lean summary to the channel, then immediately adds full release notes in a thread. It handles platform-specific emoji, distribution links, and dependency references. The first time an agent posted a perfectly formatted release announcement to our team channel, the reaction was a mix of delight and mild existential concern.
 
 **The setup script.** The meta-repo includes a script that configures all of these integrations — CLI authentication, MCP server connections, permission grants. Run it once, and your agent has access to the entire toolchain.
+
+If you squint at this list — CI access, repository management, issue tracking, merge requests, chat — you might notice it reads a lot like the feature list of those fully autonomous "AI software engineer" products that have been making the rounds (*cough* OpenClaw *cough*). Internally, I've described our setup as "OpenClaw without the heartbeat and gaping security flaws." The agent has access to all the same tools, but it runs locally, on your machine, with your credentials, and — this is the important part — with a human reviewing every step. No autonomous loop deciding to push to main at 3 AM.
+
+A note on what's *not* automated yet: releases. The release process still involves a lot of manual coordination — version bumps, changelog finalization, artifact publishing, app store submissions. We have workflows that document the process, and the agent can handle individual steps, but end-to-end release automation is still on the roadmap. That said, even the partial integration — having an agent that can check CI status, create merge requests, update tickets, and post to Slack — already makes a huge difference. It's also, and I don't think this gets said enough in technical blog posts, *fun*. Watching an agent navigate your entire toolchain with confidence, posting a formatted release announcement to Slack while you sip your coffee — that's the kind of thing that makes you grin at your screen like an idiot.
 
 One lesson we learned the hard way: for production use, **shell scripts are more reliable than MCP tools**. We discovered this after an MCP server returned only pagination metadata instead of actual pipeline data. We documented the finding explicitly — "use bash commands, not MCP tools for this" — so future agents (and future us) don't repeat the experiment.
 
@@ -180,9 +208,9 @@ The lifecycle works like this:
 3. **Completion**: Mark as complete, add a final summary.
 4. **Archival**: Move to `archive/`. The completed work becomes reference material for similar future tasks.
 
-The magic is in the bridge between the agent's built-in auto-memory and this structured tracking. The agent's auto-memory stores a pointer — "Active epic: EPIC-001, see `active-work/EPIC-001.md`" — and the next session, the agent reads the tracking document and picks up exactly where it left off. Not approximately. Exactly. With full knowledge of decisions made, feedback received, and work remaining.
+What makes this work is the bridge between the agent's built-in auto-memory and this structured tracking. The agent's auto-memory stores a pointer — "Active epic: EPIC-001, see `active-work/EPIC-001.md`" — and the next session, the agent reads the tracking document and picks up exactly where it left off. Not approximately. Exactly. With full knowledge of decisions made, feedback received, and work remaining.
 
-We've run epics spanning five sessions over three weeks using this pattern. The fifth session had the same quality of context as the first. That's not something we achieved with auto-memory alone.
+We've run epics spanning five sessions over three weeks using this pattern. The fifth session had the same quality of context as the first. Auto-memory alone never got us there.
 
 ## Case Study: Coordinated Cross-Platform Configuration Fix
 
@@ -200,13 +228,13 @@ Here's how the five sessions unfolded:
 
 **Session 3: Stakeholder feedback.** Two team members flagged that the migration guidance in the release notes was misleading. The agent read their feedback, updated release notes across all six repositories, added prominent warning blocks, and adjusted code examples. It then posted a response to the issue tracker addressing both reviewers' concerns with commit references. All of this was recorded in the tracking document.
 
-**Session 4: Wrapper updates.** While waiting for merge request approvals on the native SDKs, the agent applied release notes and configuration changes to all four wrapper plugins. It also tackled two additional documentation improvements that were discovered during the work — because an agent with time on its hands and context on the broader codebase can be remarkably productive in the margins.
+**Session 4: Wrapper updates.** While waiting for merge request approvals on the native SDKs, the agent applied release notes and configuration changes to all four wrapper plugins. With time still available in the session, we pointed it at two related documentation tickets that had been sitting in the backlog — tasks we'd been putting off because they touched files across all six repos. The agent, already holding full context of the codebase from the main epic, knocked them out in minutes.
 
 **Session 5: Merge day.** All eight merge requests were merged in dependency order: shared resources first, then both native SDKs in parallel, then all four wrappers in parallel. All issue tracker tickets were closed. The epic tracking document was marked complete and moved to the archive.
 
-**What the agents meta-repo provided**: Session 1 took minutes instead of hours because the agent already knew which repos existed, their dependency order, where config files lived, how to query CI, and what the commit conventions were. Sessions 2 through 5 each started with full context of everything that had happened before. The cross-repo workflow documentation meant the agent followed a proven pattern for coordinated changes. And the archive now serves as a reference for the next time we need to do something similar.
+**What the agents meta-repo provided**: Session 1 took minutes instead of hours because the agent already knew which repos existed, their dependency order, where config files lived, how to query CI, and what the commit conventions were. Sessions 2 through 5 each started with full context of everything that had happened before. The cross-repo workflow documentation meant the agent followed a tested pattern for coordinated changes. And the archive now serves as a reference for the next time we need to do something similar.
 
-**Without the meta-repo**: The agent would have spent significant time each session re-exploring the codebase. It likely would have missed the dependency ordering requirement. Stakeholder feedback from session 3 would have been lost by session 4. And we'd have no record of the subtle mocking bug that cost us time — a bug that, now documented, will cost us zero time next time.
+**Without the meta-repo**: The agent would have spent a good chunk of each session re-exploring the codebase. It likely would have missed the dependency ordering requirement. Stakeholder feedback from session 3 would have been lost by session 4. And we'd have no record of the subtle mocking bug that cost us time — a bug that, now documented, will cost us zero time next time.
 
 ## Proving the Pattern Scales: A Second Product Line
 
@@ -224,7 +252,7 @@ At the root of our workspace, an AGENTS.md file acts as a router: it points agen
 
 If you've made it this far and you're thinking "I should do this," here's the practical version.
 
-**Step 1: Create the repo and AGENTS.md.** Create a new repository. Add an `AGENTS.md` file with a repository map — a table listing every repo in your product line with its path, purpose, and primary language. This alone will save agents significant exploration time.
+**Step 1: Create the repo and AGENTS.md.** Create a new repository. Add an `AGENTS.md` file with a repository map — a table listing every repo in your product line with its path, purpose, and primary language. This alone will save agents a surprising amount of exploration time.
 
 **Step 2: Add repos.yaml.** Create a YAML file with machine-readable definitions. Start with paths, build commands, and version file locations. You'll be surprised how often agents need to know "which files contain the version number" and how much time a definitive list saves.
 
@@ -236,7 +264,9 @@ If you've made it this far and you're thinking "I should do this," here's the pr
 
 **Step 6: Wire it into your repos.** Add an AGENTS.md (or CLAUDE.md, .cursorrules, or whatever your agent framework uses) to each repository that references the meta-repo for conventions and workflows. At the root of your workspace, add a pointer to the meta-repo so agents can find it from anywhere.
 
-**Step 7: Iterate.** Treat everything as a living document. When an agent discovers that a documented path no longer exists, update the documentation. When a workflow turns out to be incomplete, fill in the gaps. The meta-repo should evolve with your codebase, not calcify.
+**Step 7: Iterate.** Treat everything as a living document — Verify, Update, Suggest. When an agent discovers that a documented path no longer exists, update the documentation. When a workflow turns out to be incomplete, fill in the gaps. The meta-repo should evolve with your codebase, not calcify.
+
+Once it's set up, the daily workflow is almost disappointingly simple: open a terminal in your workspace root, start your agent, tell it the ticket number and product area, and let the meta-repo do the rest. The agent reads the entry point, navigates to the right repositories, picks up any active-work tracking documents, and starts the research-plan-execute cycle with full context. The entire orientation phase — which used to eat up a good part of every session — just vanishes.
 
 **What to start with**: AGENTS.md, repos.yaml, commit conventions, one workflow. This is enough to see immediate value.
 
@@ -246,27 +276,29 @@ If you've made it this far and you're thinking "I should do this," here's the pr
 
 ## Lessons Learned (And a Few Things We Got Wrong)
 
-**Documentation drift is real.** The "living document" disclaimer is not just boilerplate. We discovered stale paths and outdated commands regularly. The meta-repo must be maintained, not just created. We mitigate this by having agents suggest updates when they discover drift — but it requires discipline to actually apply the suggestions.
+**Documentation drift is real.** Remember those Verify/Update/Suggest principles? They're not just for show. We discovered stale paths and outdated commands regularly. The meta-repo must be maintained, not just created. The self-healing mechanism helps — agents do catch and fix drift — but it requires discipline to review and apply their suggestions rather than dismissing them as noise.
 
 **Start small.** Our first iteration had too much documentation. The agent would dutifully read everything, spending thousands of tokens on infrastructure details it didn't need for the current task. We learned to keep AGENTS.md focused on quick reference and link to deeper docs only when the agent needs them.
 
-**Active work tracking is the highest-leverage feature.** The conventions and workflows are useful but relatively static. The active-work tracking is what makes multi-session epics feasible. It's the difference between "a helpful tool" and "a team member who remembers."
+**Active work tracking is the feature that matters most.** The conventions and workflows are useful but relatively static. The active-work tracking is what makes multi-session epics feasible. It's the difference between "a helpful tool" and "a team member who remembers."
 
 **Machine-readable config pays off.** `repos.yaml` seemed like overkill when we first created it. It wasn't. Agents parse it naturally, and it eliminates an entire category of "which file do I need to update?" questions.
 
 **Per-repo documentation still matters.** The meta-repo doesn't replace per-repo AGENTS.md files — it complements them. Each repository still needs its own documentation for build commands, testing instructions, and repo-specific quirks. The meta-repo handles the *cross-repo* context; individual repos handle *local* context.
 
-**The archive is underused but invaluable.** We rarely point agents at archived epics. But when we do — "handle this release the same way we did the last one" — the detail is worth its weight in tokens. A completed epic with full decision history, merge request coordination notes, and stakeholder feedback is the best possible reference for similar future work.
+**The archive is underused but worth keeping.** We rarely point agents at archived epics. But when we do — "handle this release the same way we did the last one" — the detail is worth its weight in tokens. A completed epic with full decision history, merge request coordination notes, and stakeholder feedback turns out to be the best reference for similar future work.
 
-**Agents will surprise you.** Give them good context and the right tools, and they'll accomplish things you didn't think to ask for. During one epic, an agent tackled documentation improvements while waiting for merge request approvals — work we hadn't assigned, but that was clearly useful and within scope. Good context doesn't just make agents effective; it makes them proactive in ways that are genuinely helpful.
+**Good context creates compound returns.** During our cross-platform epic, the agent had already built up deep context of every repository involved. So when we pointed it at two unrelated documentation tickets during a lull, it completed them in minutes — work that would have taken a fresh agent (or a context-switching human) much longer. The meta-repo didn't just help with the primary task; it made everything *adjacent* to that task faster too.
 
 ## What's Next
 
-The pattern is still evolving. We're exploring automated drift detection (a CI job that verifies documented paths and commands still exist), richer machine-readable configurations (test commands, deployment targets, distribution channels), and cross-product-line conventions for the things that really are universal.
+Let me be honest: none of this is a silver bullet. It's a way of working that happens to fit well in early 2026, when AI coding agents are powerful enough to do real cross-repo work but still need structured context to do it well. The tooling is evolving fast. The models are evolving faster. Six months from now, parts of this pattern may be unnecessary because the agents will have gotten better at discovering context on their own. Other parts — the active-work tracking, the human-in-the-loop planning — will probably matter more, not less.
+
+We're exploring automated drift detection (a CI job that verifies documented paths and commands still exist), richer machine-readable configurations (test commands, deployment targets, distribution channels), and cross-product-line conventions for the things that really are universal.
 
 But the broader point — and the reason for writing this rather long blog post — is this: as AI coding agents become more capable, the bottleneck shifts. It's no longer "can the agent write the code?" The answer to that is increasingly, unreservedly, yes. The bottleneck is: "does the agent know enough to write the *right* code, in the *right* place, following the *right* conventions, in the *right* order?"
 
-Persistent, structured context is the unlock. A meta-repo that gives your agent the institutional knowledge it needs — not just what your code does, but how your team works — is the difference between a powerful tool and a productive colleague.
+Persistent, structured context is the unlock. A meta-repo that gives your agent the institutional knowledge it needs — not just what your code does, but how your team works — turns a fast tool into a fast tool that's actually pointed in the right direction.
 
 If any of this resonated, start small. Create a repository. Write an AGENTS.md. Add a repos.yaml. Document your most common cross-repo workflow. Then give your agent a task and watch what happens when it doesn't have to start from scratch.
 
