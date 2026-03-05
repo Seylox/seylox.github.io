@@ -1,2 +1,35 @@
 title: Working around the limitations of my intelligence
-theme: minima
+remote_theme: "mmistakes/minimal-mistakes@4.26.2"
+
+minimal_mistakes_skin: "sunrise"
+
+# Site settings
+locale: "en-US"
+description: "A blog about AI agents, software engineering, and working around limitations."
+url: "https://seylox.github.io"
+baseurl: ""
+
+# Build settings
+markdown: kramdown
+plugins:
+  - jekyll-feed
+  - jekyll-include-cache
+
+# Reading
+words_per_minute: 200
+
+# Author
+author:
+  name: "Bernd Kampl"
+
+# Defaults
+defaults:
+  - scope:
+      path: ""
+      type: posts
+    values:
+      layout: single
+      read_time: true
+      toc: true
+      toc_sticky: true
+      share: true

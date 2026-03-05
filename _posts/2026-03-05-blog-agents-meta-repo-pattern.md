@@ -1,13 +1,10 @@
 ---
-layout: post
+layout: single
 title: "In Which We Give Our AI Agent a Map (And It Stops Getting Lost)"
 date: 2026-03-05
----
-
-# In Which We Give Our AI Agent a Map (And It Stops Getting Lost)
-
-*The Agents Meta-Repository Pattern for Multi-Repo Codebases*
-
+excerpt: "The Agents Meta-Repository Pattern for Multi-Repo Codebases"
+toc: true
+toc_sticky: true
 ---
 
 Initially, our expectations were fairly modest. We had started using AI coding agents — Claude Code, specifically — to help with the kind of work that makes developers question their career choices: coordinating changes across multiple repositories, keeping documentation in sync, wrangling submodules. The sort of tasks where you spend more time *navigating* than *coding*.
