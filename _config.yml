@@ -18,9 +18,35 @@ plugins:
 # Reading
 words_per_minute: 200
 
+# Include _pages directory
+include:
+  - _pages
+
 # Author
 author:
   name: "Bernd Kampl"
+  avatar: "https://www.gravatar.com/avatar/f639f92e43309195836552f105efc751?s=300"
+  bio: "I love deadlines. I love the whooshing noise they make as they go by."
+  location: "Graz, Austria"
+  links:
+    - label: "GitHub"
+      icon: "fab fa-fw fa-github"
+      url: "https://github.com/Seylox"
+    - label: "LinkedIn"
+      icon: "fab fa-fw fa-linkedin"
+      url: "https://www.linkedin.com/in/bernd-kampl-0597a494/"
+    - label: "X"
+      icon: "fab fa-fw fa-x-twitter"
+      url: "https://x.com/Seylox"
+    - label: "Bluesky"
+      icon: "fab fa-fw fa-bluesky"
+      url: "https://bsky.app/profile/seylox.bsky.social"
+    - label: "Mastodon"
+      icon: "fab fa-fw fa-mastodon"
+      url: "https://graz.social/@Seylox"
+    - label: "Email"
+      icon: "fas fa-fw fa-envelope-square"
+      url: "mailto:bernd.kampl@gmail.com"
 
 # Defaults
 defaults:
@@ -33,3 +59,9 @@ defaults:
       toc: true
       toc_sticky: true
       share: true
+  - scope:
+      path: ""
+      type: pages
+    values:
+      layout: single
+      author_profile: true
