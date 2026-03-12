@@ -18,6 +18,12 @@ plugins:
 # Reading
 words_per_minute: 200
 
+# Analytics
+analytics:
+  provider: "google-gtag"
+  google:
+    tracking_id: "G-EC8LF71MRK"
+
 # Include _pages directory
 include:
   - _pages
