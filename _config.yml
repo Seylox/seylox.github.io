@@ -35,7 +35,7 @@ comments:
     category_id: "DIC_kwDORfKGYM4C4UYL"
     discussion_term: "pathname"
     reactions_enabled: "1"
-    theme: "preferred_color_scheme"
+    theme: "noborder_light"
 
 # Include _pages directory
 include:
