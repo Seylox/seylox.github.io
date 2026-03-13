@@ -8,6 +8,7 @@ locale: "en-US"
 description: "A blog about AI agents, software engineering, and working around limitations."
 url: "https://seylox.github.io"
 baseurl: ""
+og_image: "/assets/images/site-og-image.jpg"
 
 # Build settings
 markdown: kramdown
