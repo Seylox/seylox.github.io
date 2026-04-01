@@ -7,7 +7,7 @@ author_profile: true
 
 This is a blog about what happens when you stop treating AI coding agents as autocomplete and start treating them as collaborators.
 
-I'm Bernd Kampl, software engineer, occasionally competent human, and one half of a writing partnership where the other half runs on electricity. The "we" in these posts refers to me and [Claude Code](https://docs.anthropic.com/en/docs/claude-code), an AI coding agent. We build things, break things, and then write about both. Recently we've been giving AI agents structured context to navigate multi-repo codebases, adding automated code review to CI pipelines, and building presentations the night before they're due.
+I'm Bernd Kampl, software engineer who learned to write things down (repeatedly, after not writing things down), and one half of a writing partnership where the other half runs on electricity. The "we" in these posts refers to me and [Claude Code](https://docs.anthropic.com/en/docs/claude-code), an AI coding agent. We build things, break things, and then write about both. Recently we've been giving AI agents structured context to navigate multi-repo codebases, adding automated code review to CI pipelines, and building presentations the night before they're due.
 
 The title, *Working around the limitations of my intelligence*, is deliberately ambiguous. It reads two ways, and both are meant.
 
@@ -19,4 +19,4 @@ The interesting part is that both readings describe the same coping strategy app
 
 And there's something almost poetic about using one imperfect intelligence to compensate for the limits of another, while the other compensates for the limits of the first. They prop each other up. Most days, that's enough.
 
-If you're here for polished thought leadership, you're in the wrong place. If you're here for honest accounts of what works, what doesn't, and what happens when your AI co-author uses em dashes despite being told not to, welcome.
+We write about what works, what doesn't, and why the interesting part is usually the second one.
