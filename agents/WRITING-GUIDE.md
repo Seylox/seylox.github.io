@@ -31,6 +31,7 @@ Instructions for writing blog posts on seylox.github.io. Intended for both the h
 
 ## What to Avoid
 
+- Em dashes. Not sometimes. Not "sparingly." Never. Use commas, periods, semicolons, colons, or parentheses. There is always a better option, and the better option doesn't make the reader feel like they're being guided through a dramatic pause factory. This rule exists because the AI co-author defaults to em dashes like a moth defaults to light, and left unchecked will produce text that is 40% punctuation by weight.
 - Cliches: "game-changer," "leverage," "in today's fast-paced world," "without further ado"
 - Meta-commentary on the writing itself (unless it's genuinely funny and brief)
 - Forced jokes or puns — if a line isn't landing after two attempts, cut it
