@@ -7,10 +7,16 @@ author_profile: true
 
 This is a blog about what happens when you stop treating AI coding agents as autocomplete and start treating them as collaborators.
 
-I'm Bernd Kampl — software engineer, occasionally competent human, and one half of a writing partnership where the other half runs on electricity. The "we" you'll encounter in these posts refers to me and [Claude Code](https://docs.anthropic.com/en/docs/claude-code), an AI coding agent that helps me build things, break things, and then write about both.
+I'm Bernd Kampl, software engineer, occasionally competent human, and one half of a writing partnership where the other half runs on electricity. The "we" in these posts refers to me and [Claude Code](https://docs.anthropic.com/en/docs/claude-code), an AI coding agent. We build things, break things, and then write about both. Recently we've been giving AI agents structured context to navigate multi-repo codebases, adding automated code review to CI pipelines, and building presentations the night before they're due.
 
-The blog covers the messy, practical side of working with AI agents: the patterns that actually survive contact with production, the workflows that make multi-repo codebases less painful, and the surprising number of times the AI catches bugs that I introduced while "improving" the code.
+The title, *Working around the limitations of my intelligence*, is deliberately ambiguous. It reads two ways, and both are meant.
 
-The title — *Working around the limitations of my intelligence* — is deliberately ambiguous. Some days the limitations are mine. Some days they're the AI's. Most days it's both, and the interesting part is figuring out which.
+The first: my own cognition has limits. I forget things. I lose track of conventions across ten repositories. I can't hold an entire dependency chain in my head while also remembering which wrapper uses which podspec. So I externalize. I write things down. I build systems to compensate for what my brain won't reliably do on its own.
 
-If you're here for polished thought leadership, you're in the wrong place. If you're here for honest accounts of what works, what doesn't, and the occasional accidental `rm -rf`, welcome.
+The second: "the intelligence" is the AI itself. LLMs have limits too. They start every session from zero. They hallucinate confidently. They'll follow your conventions perfectly if you document them and cheerfully invent new ones if you don't. So I build scaffolding around them. Context files. Structured workflows. Conventions in version control. Infrastructure that makes the tool more reliable than the tool is on its own.
+
+The interesting part is that both readings describe the same coping strategy applied at two levels. Build scaffolding around the intelligence (biological or artificial) to make it more reliable. Raw cognitive horsepower, whether carbon or silicon, is never enough. The real skill is in the infrastructure you build around it.
+
+And there's something almost poetic about using one imperfect intelligence to compensate for the limits of another, while the other compensates for the limits of the first. They prop each other up. Most days, that's enough.
+
+If you're here for polished thought leadership, you're in the wrong place. If you're here for honest accounts of what works, what doesn't, and what happens when your AI co-author uses em dashes despite being told not to, welcome.
