@@ -73,6 +73,8 @@ We used an AI agent to build a presentation about using AI agents. The presentat
 
 The presentation argues that our role is shifting from playing instruments to conducting. During the session, that's what happened: I directed, reviewed, course-corrected, and added detail from lived experience. Claude drafted, structured, refined, and caught things I missed.
 
-The presentation took one session. From "I have a title and no slides" to "here's a self-contained HTML file you can upload to Confluence." The blog post about the presentation, the one you're reading now, was written in the same session.
+The [presentation](/presentations/2026-04-02-writing-the-score.html) took one session. From "I have a title and no slides" to "here's a self-contained HTML file you can upload to Confluence." The blog post about it, the one you're reading now, was written in the same session.
 
 The score gets more complete every day. That part's not a metaphor.
+
+*P.S. If you're viewing the slides and wondering where the actual talk is: press S to open speaker view. The full narration is in the notes.*
