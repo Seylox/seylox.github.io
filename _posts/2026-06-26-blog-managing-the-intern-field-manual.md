@@ -7,7 +7,7 @@ toc: true
 toc_sticky: true
 ---
 
-[Last time](/2026/06/23/blog-working-with-overconfident-intern/) I introduced the intern: brilliant, tireless, allergic to the word "no," and gone before any of Its decisions come due. That post was the why. This one is the boring, useful part, the checklist I actually run. If the first post convinced you this is a management problem, this is the management.
+[Last time](/2026/06/23/blog-working-with-overconfident-intern.html) I introduced the intern: brilliant, tireless, allergic to the word "no," and gone before any of Its decisions come due. That post was the why. This one is the boring, useful part, the checklist I actually run. If the first post convinced you this is a management problem, this is the management.
 
 It comes down to three kinds of question. What is this work? How do I drive It? And which of Its habits do I just have to stay scared of? The first two are decisions I make on purpose. The third is a list of things that will cost me if I forget them.
 
@@ -33,7 +33,7 @@ Early on, every useful exchange adds to a shared understanding It can build on, 
 
 ## The habits to stay scared of
 
-These aren't decisions. They're standing facts about the intern that punish you the moment you relax. I covered them in the [first post](/2026/06/23/blog-working-with-overconfident-intern/), so here they are as a list, not a sermon:
+These aren't decisions. They're standing facts about the intern that punish you the moment you relax. I covered them in the [first post](/2026/06/23/blog-working-with-overconfident-intern.html), so here they are as a list, not a sermon:
 
 - **It doesn't bear the consequences.** It won't get the late-night call. So close the loop while It's still working: make It run the tests, sit in the failures, and fix them. Never trust the first "done."
 - **It copies whatever It's shown.** Clean room, clean work; messy room, beautifully matched mess. Curate what It gets to look at.

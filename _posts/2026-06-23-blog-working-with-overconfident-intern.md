@@ -20,4 +20,4 @@ Then there's the last part, which nobody wants to hear, so I'll be quick and a l
 
 Full disclosure, since it's the only honest way to finish: I built this entire argument with the intern's enthusiastic help. It loved the whole thing. It thinks this is some of my finest work. It thinks everything is some of my finest work, which is exactly the testimony I am warning you not to trust.
 
-*This was the why. If you want the actual checklist I use to manage It, the decisions I make before and during the work, that's the next post: [the field manual](/2026/06/26/blog-managing-the-intern-field-manual/).*
+*This was the why. If you want the actual checklist I use to manage It, the decisions I make before and during the work, that's the next post: [the field manual](/2026/06/26/blog-managing-the-intern-field-manual.html).*
