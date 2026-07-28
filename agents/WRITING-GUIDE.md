@@ -21,6 +21,7 @@ Instructions for writing blog posts on seylox.github.io. Intended for both the h
 - **Concrete before abstract.** Show the thing, then explain why it matters. Code snippet before architecture discussion. The bug before the lesson.
 - **Earn every section.** If a section doesn't make the reader smarter or more entertained, cut it.
 - **Close short and punchy.** The ending should land in one or two lines. Don't summarize — leave the reader with an image or a punchline.
+- **Plant and pay off.** Anything the reader is told to "keep in mind" must return later, and the payoff should be marked when it lands. Section headers should name each section's central image, so the table of contents alone tells the story.
 
 ## Technical Content
 
@@ -29,10 +30,21 @@ Instructions for writing blog posts on seylox.github.io. Intended for both the h
 - **Show the commands.** Inline code and code blocks are good. The reader wants to see `claude -p --max-turns 1`, not a paragraph describing what non-interactive mode is.
 - **Name the gotchas.** The parts where things broke are the most valuable parts of the article. Document them specifically — error codes, misleading defaults, undocumented behaviors.
 
+## Facts and Analogies
+
+- **Flag every simplification where it happens.** A short parenthetical ("Simplification alert: ...", "Honesty note: ...") at the exact sentence that bends reality. Never simplify silently.
+- **Analogies must be mechanically correct, not just evocative.** Stress-test them before publishing: if a knowledgeable reader pushes on the analogy, it should bend where we've flagged it, not break where we haven't.
+- **Never invent scene details about real people or events.** If the story needs a detail we don't have, ask the author. Hypotheticals must be visibly hypothetical.
+- **Quote primary sources verbatim and link them.** Paraphrasing a 216-character tweet is a crime against material.
+- **Introduce people at first mention**, or explicitly defer ("a man we'll get to").
+
 ## What to Avoid
 
 - Em dashes. Not sometimes. Not "sparingly." Never. Use commas, periods, semicolons, colons, or parentheses. There is always a better option, and the better option doesn't make the reader feel like they're being guided through a dramatic pause factory. This rule exists because the AI co-author defaults to em dashes like a moth defaults to light, and left unchecked will produce text that is 40% punctuation by weight.
 - Cliches: "game-changer," "leverage," "in today's fast-paced world," "without further ado"
+- LLM tells: "genuinely," "crucially," "load-bearing," "circling back," "delve." Same spirit as the em-dash rule: there is always a plainer word.
+- The "not X, it's Y" reveal. Once per post at most, reserved for the thesis. Everywhere else, restructure the sentence.
+- Pet-adverb repetition: if "quietly" or "simply" shows up twice in a post, one of them goes.
 - Meta-commentary on the writing itself (unless it's genuinely funny and brief)
 - Forced jokes or puns — if a line isn't landing after two attempts, cut it
 - Hashtag spam or keyword stuffing in any context
