@@ -1,7 +1,7 @@
 ---
 layout: single
 title: "In Which Math Turns Out to Be the Opposite of a Joke"
-date: 2026-07-27
+date: 2026-07-28
 excerpt: "An 87-year-old math problem died in a tweet during the World Cup final, and the same week a friend asked me how to get AI to stop lying to her. It took me a while to notice these have the same answer."
 toc: true
 toc_sticky: true
