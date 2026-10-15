@@ -7,6 +7,9 @@ toc: true
 toc_sticky: true
 ---
 
+**Update, October 2026.** This post has a sequel that is also a better starting point: [In Which the Agents Meta-Repo Pattern Gets Its October 2026 Update](/2026/10/15/blog-agents-meta-repo-pattern-october-2026-update.html). It explains the pattern from scratch, shows what seven months turned it into, and grades the predictions below. The post you are reading is left as written, for the record.
+{: .notice--info}
+
 Initially, our expectations were fairly modest. We had started using AI coding agents — Claude Code, specifically — to help with the kind of work that makes developers question their career choices: coordinating changes across multiple repositories, keeping documentation in sync, wrangling submodules. The sort of tasks where you spend more time *navigating* than *coding*.
 
 The agents were impressive. Within a single session, they could read code, understand patterns, make changes, run tests, and produce working commits. But then the session would end. And the next day, when we needed to continue the same work, the agent would start over. From scratch. Exploring directory structures it had explored yesterday. Re-reading conventions it had already internalized. Asking questions it had already answered.
