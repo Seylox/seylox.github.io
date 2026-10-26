@@ -22,7 +22,7 @@
   --text: #ebe7e2;
   --muted: #9d9893;
   --magma: rgba(255, 96, 20, 0.35);
-  --grain-opacity: 0.07;
+  --grain-opacity: 0.13;
   /* Lava: hotter = more important */
   --hot: #ffb454;
   --lava: #ff7a1a;
@@ -53,7 +53,7 @@
     --deep: #c2410c;
     --crust: #d9b8a3;
     --magma: rgba(194, 65, 12, 0.18);
-    --grain-opacity: 0.05;
+    --grain-opacity: 0.22;
   }
 }
 
@@ -77,9 +77,9 @@ p { margin: 0; }
 
 /* Rock grain: SVG noise, fixed over the page */
 body::before {
-  content: ""; position: fixed; inset: 0; z-index: 100; pointer-events: none;
-  opacity: var(--grain-opacity); mix-blend-mode: overlay;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1.2 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.92 0 0 0 0 0.9 0 0 0 0 0.88 3.2 0 0 0 -1.45'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 body:has(#view-agent:checked)::before { opacity: 0.04; }
 
@@ -161,9 +161,16 @@ body:has(#view-agent:checked) .topbar__file b { color: var(--amber); }
   font-size: clamp(3rem, 11vw, 7.5rem);
   line-height: 0.92; letter-spacing: -0.055em; font-weight: 700;
   padding-bottom: 0.08em;
-  background: linear-gradient(180deg, var(--text) 38%, var(--hot) 70%, var(--lava) 86%, var(--deep));
+  background: linear-gradient(180deg, var(--text) 0%, var(--text) 30%, var(--hot) 50%, var(--lava) 62%, var(--deep) 75%, var(--hot) 88%, var(--text) 100%);
+  background-size: 100% 220%;
+  background-position: 0 20%;
   -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 0.06em 0.35em var(--magma));
+  animation: molten 9s ease-in-out infinite alternate;
+}
+@keyframes molten {
+  from { background-position: 0 0%; }
+  to   { background-position: 0 38%; }
 }
 .hero__lead {
   margin-top: 28px; max-width: 30ch;
@@ -202,11 +209,12 @@ body:has(#view-agent:checked) .topbar__file b { color: var(--amber); }
     radial-gradient(38% 55% at 76% 86%, color-mix(in srgb, var(--lava) 34%, transparent), transparent 70%),
     radial-gradient(60% 35% at 50% 100%, color-mix(in srgb, var(--hot) 22%, transparent), transparent 70%);
   filter: blur(40px);
-  animation: smoulder 18s ease-in-out infinite alternate;
+  animation: smoulder 9s ease-in-out infinite alternate;
 }
 @keyframes smoulder {
-  from { transform: translateX(-52%) scale(1); opacity: 0.75; }
-  to   { transform: translateX(-48%) scale(1.08); opacity: 1; }
+  0%   { transform: translateX(-54%) scale(0.96); opacity: 0.45; }
+  50%  { transform: translateX(-49%) scale(1.06); opacity: 1; }
+  100% { transform: translateX(-46%) scale(1); opacity: 0.7; }
 }
 @media (prefers-color-scheme: light) { .ember { opacity: 0.45; } }
 
@@ -214,14 +222,18 @@ body:has(#view-agent:checked) .topbar__file b { color: var(--amber); }
 .block { position: relative; padding-block: clamp(48px, 8vw, 96px); }
 .block::before, .footer::before {
   content: ""; position: absolute; top: 0; left: var(--gutter); right: var(--gutter); height: 1px;
-  background: linear-gradient(90deg, var(--line), var(--crust) 12%, var(--lava) 22%, var(--hot) 26%, var(--crust) 38%, var(--line) 52%, var(--line) 70%, var(--crust) 82%, var(--line) 92%);
-  box-shadow: 0 0 10px 1px var(--magma);
-  animation: fissure 7s ease-in-out infinite alternate;
+  height: 2px;
+  background:
+    linear-gradient(90deg, transparent 0%, var(--hot) 4%, var(--lava) 8%, transparent 14%) no-repeat,
+    linear-gradient(90deg, var(--line), var(--crust) 12%, var(--lava) 22%, var(--crust) 38%, var(--line) 52%, var(--line) 70%, var(--crust) 82%, var(--line) 92%);
+  background-size: 50% 100%, 100% 100%;
+  box-shadow: 0 0 12px 1px var(--magma);
+  animation: flow 11s linear infinite;
 }
-.block:nth-of-type(odd)::before { background-position: 0 0; transform: scaleX(-1); }
-@keyframes fissure {
-  from { opacity: 0.55; }
-  to   { opacity: 1; }
+.block:nth-of-type(odd)::before { transform: scaleX(-1); animation-duration: 14s; animation-delay: -5s; }
+@keyframes flow {
+  from { background-position: -60% 0, 0 0; }
+  to   { background-position: 220% 0, 0 0; }
 }
 .block h2 {
   font-size: clamp(1.75rem, 4.2vw, 2.75rem); line-height: 1.05;
@@ -296,7 +308,16 @@ body:has(#view-agent:checked) .topbar__file b { color: var(--amber); }
   content: ""; position: absolute; inset: auto 0 0 0; height: 2px;
   background: linear-gradient(90deg, transparent, var(--deep) 20%, var(--hot) 50%, var(--deep) 80%, transparent);
 }
+.strengths li { animation: heat 6s ease-in-out infinite alternate; }
+.strengths li:nth-child(2) { animation-delay: -1.5s; }
+.strengths li:nth-child(3) { animation-delay: -3s; }
+.strengths li:nth-child(4) { animation-delay: -4.5s; }
+@keyframes heat {
+  from { box-shadow: inset 0 -50px 50px -46px var(--magma); }
+  to   { box-shadow: inset 0 -80px 70px -46px var(--magma); }
+}
 .strengths li:hover {
+  animation-play-state: paused;
   transform: translateY(-3px); border-color: var(--crust);
   box-shadow: inset 0 -90px 70px -50px var(--magma), 0 18px 40px -24px var(--magma);
 }
