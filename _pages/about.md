@@ -1,6 +1,6 @@
 ---
 layout: single
-title: "About"
+title: "About the Blog"
 permalink: /about/
 author_profile: true
 ---
@@ -10,3 +10,5 @@ I'm Bernd Kampl, software engineer who learned to write things down (repeatedly,
 The title, *Working around the limitations of my intelligence*, is deliberately ambiguous. It could mean mine. It could mean the AI's. The fact that the workaround is the same in both cases (write it down, build scaffolding, hope for the best) is either elegant or slightly concerning. We haven't decided which.
 
 We write about what works, what doesn't, and why the interesting part is usually the second one.
+
+The human half has a page of its own: [Me](/me/).
