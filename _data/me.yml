@@ -1,5 +1,5 @@
 # Content for the /me/ page. The Human view, the Agent terminal and the Arcade boards are all
-# built from this file by Jekyll (me/v4/index.html). Edit here, not in the page.
+# built from this file by Jekyll (me/index.html). Edit here, not in the page.
 # Text fields may contain HTML. "agent" fields are the plain-text lines for the terminal.
 # Changelog titles read like release notes: "Added:", "Changed:", "Fixed:", then what.
 
@@ -7,7 +7,7 @@ updated: "2026-10"
 blog: "https://blog.rubbad.uk"
 name: "Bernd Kampl"
 eyebrow: "// read this first"
-lead: "Engineering lead. I work around the limitations of my intelligence, and lately someone else's."
+lead: "Engineering leader. I work around the limitations of my intelligence, and lately someone else's."
 sub: "This page is the context you'd want before working with me. There is also a version for your AI agent; the switch is at the top."
 arcade_sub: "This page is the context you'd want before working with me. Your AI agent gets a plain version; the switch is at the top."
 location: "Graz, Austria"
@@ -50,7 +50,7 @@ labels:
 
 currently:
   - label: "Work"
-    html: 'Leading the Platform team at <a href="https://anyline.com">Anyline</a>, which builds on-device OCR and scanning SDKs for mobile.'
+    html: 'Leading the Platform team at <a href="https://anyline.com">Anyline</a>: the on-device OCR and scanning SDKs for mobile, the shared core, the Tire Tread SDK and the cloud behind them.'
   - label: "Focus"
     html: "Agentic engineering in a codebase spread over many repositories, and what it changes about how a team plans, reviews and ships."
   - label: "Writing"
@@ -141,8 +141,8 @@ changelog:
   arcade_intro: "Twenty years, newest first. Major releases are jobs, minor releases are the things I did anyway."
   # The arcade shows the changelog on three boards: one per era.
   eras:
-    - years: "2018–2026"
-    - years: "2014–2016"
+    - years: "2020–2026"
+    - years: "2014–2018"
       kicker: "// changelog, continued"
     - years: "2006–2013"
       kicker: "// changelog, the early builds"
@@ -153,12 +153,18 @@ changelog:
       title: "Added: a blog, to remember what broke"
       html: 'Started <a href="https://blog.rubbad.uk">the blog</a>. AI agents, software engineering, and what broke along the way.'
       agent: "Started the blog."
+    - ver: "v2023"
+      kind: minor
+      era: 0
+      title: "Added: formal leadership training"
+      html: "<em>Leadership To Go</em>, a leadership program by Ferry Fischer (EEE Focus Consulting, Vienna): ten half-day modules, finished with an exam and a certificate. Years of leading teams, now with paperwork."
+      agent: "Leadership To Go program: 10 half-day modules, exam, certificate."
     - ver: "v2022.01"
       kind: major
       era: 0
       title: "Changed: employer to Anyline, scope to mobile SDKs"
-      html: "Team lead at Anyline, maker of on-device OCR and scanning SDKs. I lead the team behind the mobile SDKs across Android, iOS and the cross-platform wrappers, look after releases, CI and docs, and these days spend a fair amount of time teaching agents our conventions."
-      agent: "Team lead at Anyline. Mobile SDKs, releases, CI, docs, agents."
+      html: "Team lead at Anyline, maker of on-device OCR and scanning SDKs. Hired to lead the Mobile team: native Android and iOS plus the cross-platform wrappers. Since then the team has taken on the shared core, the Tire Tread SDK and the cloud, at the same release cadence. I look after releases, CI and docs, and designed the agentic engineering workflow that Anyline's SDK and cloud development runs on."
+      agent: "Team lead at Anyline. Mobile SDKs, later also core, Tire Tread SDK\n                   and cloud. Releases, CI, docs, the agentic engineering workflow."
     - ver: "v2020"
       kind: patch
       era: 0
@@ -167,7 +173,7 @@ changelog:
       agent: "Smart home: Home Assistant, Z-Wave."
     - ver: "v2018"
       kind: patch
-      era: 0
+      era: 1
       title: "Added: instant-print photo box (wedding build)"
       html: "An instant-print selfie box for my own wedding: a Sony Alpha 5000, a Google Pixel C running a self-written Android app, a Raspberry Pi, and a Canon Selphy printer."
       agent: "Wedding photo box: camera, tablet, Raspberry Pi, printer."
@@ -199,8 +205,8 @@ changelog:
       kind: major
       era: 2
       title: "Added: MSc Telematics, with honors"
-      html: "MSc in Telematics at TU Graz, with honors. Master's thesis on modelling server energy consumption, written in Dublin."
-      agent: "MSc Telematics, TU Graz, with honors. Thesis in Dublin."
+      html: "MSc in Telematics at TU Graz, with honors, including an exchange term at Kennesaw State University, Georgia. Master's thesis on modelling server energy consumption, written in Dublin with University College Dublin."
+      agent: "MSc Telematics, TU Graz, with honors. Exchange term in Georgia, US.\n                   Thesis in Dublin."
     - ver: "v2012"
       kind: patch
       era: 2
@@ -211,8 +217,8 @@ changelog:
       kind: init
       era: 2
       title: "Initial release: BSc Telematics, TU Graz"
-      html: "BSc in Telematics (computer science and electrical engineering) at TU Graz. Bachelor's thesis on 3D features for action recognition, plus an exchange term at Kennesaw State University, Georgia."
-      agent: "BSc Telematics, TU Graz. Exchange term in Georgia, US."
+      html: "BSc in Telematics (computer science and electrical engineering) at TU Graz. Bachelor's thesis on 3D features for action recognition."
+      agent: "BSc Telematics, TU Graz."
 
 # "Recently written" comes from the blog's latest posts; this is how many.
 recent_posts: 3
@@ -239,8 +245,8 @@ agent:
     conventions: "Conventions"
     contact: "Contact"
   intro: "Read this first. Everything below was true at the time of writing."
-  photo: "- Photo: ../photo.jpg (smiling, slightly wet, on a boat.\n  Not representative of a typical workday.)"
-  role: "- Role: Engineering lead. Leads the Platform team at Anyline\n  (on-device OCR and scanning SDKs)."
+  photo: "- Photo: /me/photo.jpg (smiling, slightly wet, on a boat.\n  Not representative of a typical workday.)"
+  role: "- Role: Engineering leader. Leads the Platform team at Anyline\n  (on-device OCR and scanning SDKs, and the cloud behind them)."
   focus:
     - "Agentic engineering across a codebase with many repositories."
     - "What that changes about how a team plans, reviews and ships."

@@ -3,8 +3,9 @@
 Working notes for a personal one-pager at `blog.rubbad.uk/me/`, reached via `rubbad.uk`.
 Pick up from here in any session. Decisions marked **locked** are settled; don't re-litigate.
 
-Heads-up: everything in `notes/` is publicly served by GitHub Pages once pushed. Nothing
-internal, nothing about job searches, nothing an employer wouldn't want public.
+Heads-up: `notes/` is excluded from the site build (`_config.yml`), but the repository itself
+is public on GitHub, so everything here is public once pushed. Nothing internal, nothing about
+job searches, nothing an employer wouldn't want public.
 
 ## Goal
 
@@ -302,8 +303,8 @@ no console errors.
   performance. Headless Chrome screenshots via CLI are unreliable for animated pages.
 - Repo rules (`AGENTS.md`): don't commit or push unless asked; one-line conventional
   commits, no AI attribution. Pushing to `main` publishes; nothing has been pushed.
-- Reminder: `notes/` is publicly served once pushed. Keep it free of internal or
-  job-search context.
+- Reminder: `notes/` is public once pushed (in the GitHub repo, not on the site). Keep it
+  free of internal or job-search context.
 
 ### v3 spike status (2026-10-26)
 
@@ -594,6 +595,8 @@ Decisions (locked):
   Section headings (`sections`, with Arcade `exit` and terminal `agent` variants) and the
   small fixed labels (`labels`) live there too, so no text is written into the template.
 - **Old drafts stay** under `/me/v1/` to `/me/v4/`, unlinked once the final page is live.
+  (Superseded: the drafts were removed when v4 moved to `/me/`; they live on in git history
+  and the local `me-v*` tags.)
 
 How it fits together:
 - `me/v4/style.css`: v1's styles, with its component rules (`.now`, `.limits`, `.strengths`,
@@ -618,7 +621,7 @@ Local preview (Jekyll is needed now, the Python server only serves v1 to v3):
 - Gems install into `vendor/bundle` (git-ignored, as are `_site/` and the caches; the repo had
   no `.gitignore` before).
 - Run: `BUNDLE_GEMFILE=Gemfile.local bundle exec jekyll serve --host 127.0.0.1 --port 4001`
-  and open `/me/v4/`.
+  and open `/me/` (it was `/me/v4/` before the promotion).
 
 Checked (Chrome DevTools MCP against the Jekyll server): the Agent terminal and the Human
 page text are identical to v1 except two intended changes (the photo path in the terminal,
@@ -646,3 +649,20 @@ all ten arcade boards fit at 1280x800 as in v3.5.
 - Section headings, Arcade exit names, the terminal headings and the small labels moved from
   `me/v4/index.html` into `_data/me.yml`. The generated page is byte-identical apart from the
   new titles.
+
+### Promoted to /me/, and the content follows the CV (2026-10-26)
+
+- v4 is now the page: `me/index.html`, `me/style.css`, `me/arcade.css`, `me/arcade.js`,
+  `me/view.js`. The draft picker and `me/v1/` to `me/v4/` are gone (history and tags keep
+  them). The page is in the sitemap now; paths to `fonts/` and `photo.jpg` are relative to
+  `me/`. Older sections of these notes still name the `me/v4/` paths.
+- Navigation: "About" is now "About the Blog", plus a "Me" entry for `/me/`. The About page
+  ends with a link to `/me/`.
+- The CV (`cv/cv.tex`) is the reference for facts. Changes to match it: "Engineering leader";
+  the Anyline entry and "Currently" name the wider scope (shared core, Tire Tread SDK, cloud)
+  and the agentic engineering workflow; a new minor release v2023 for the *Leadership To Go*
+  program; the exchange term at Kennesaw State moved from the BSc to the MSc entry.
+  Team sizes and internal details from the CV stay off this page.
+- The Arcade's changelog boards are now 4 / 4 / 4 releases: 2020–2026, 2014–2018, 2006–2013.
+- Next, outside the repo: Cloudflare redirect for `rubbad.uk` and `www` (see "Prototype
+  workflow", step 5). After the push: test on a real phone.
