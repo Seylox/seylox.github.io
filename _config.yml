@@ -35,6 +35,24 @@ comments:
 include:
   - _pages
 
+# Keep working material out of the built site. Jekyll 3 (GitHub Pages)
+# replaces its default exclude list, so the defaults are repeated here.
+exclude:
+  - agents
+  - cv
+  - notes
+  - AGENTS.md
+  - CLAUDE.md
+  - LICENSE
+  - Gemfile
+  - Gemfile.lock
+  - gemfiles
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
 # Author
 author:
   name: "Bernd Kampl"
