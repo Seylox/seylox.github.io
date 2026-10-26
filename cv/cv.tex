@@ -1,0 +1,106 @@
+\documentclass[10pt]{article}
+\usepackage{array, xcolor, longtable}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{colortbl}
+
+\title{\bfseries Bernd Kampl}
+\author{\bfseries Engineering Leader}
+\date{}
+
+\definecolor{lightgray}{gray}{0.8}
+\newcolumntype{L}{>{\raggedleft}p{0.18\textwidth}}
+\newcolumntype{R}{p{\dimexpr0.82\textwidth-4\tabcolsep-0.5pt\relax}}
+\newcommand\VRule{\color{lightgray}\vrule width 0.5pt}
+\newcommand\HRule{\color{lightgray}\hrule width 0.5pt}
+\newcommand\RowRule{\arrayrulecolor{lightgray}\cline{1-1}}
+% Tables may break across pages between rows.
+\setlength\LTleft{0pt}
+\setlength\LTright{0pt}
+\setlength\LTpre{0.3em}
+\setlength\LTpost{0pt}
+
+% Personal data is kept out of git, see README.md.
+\ifdefined\cvpublic
+\input{personal-data.public.tex}
+\usepackage{fancyhdr}
+% maketitle forces the plain style on page 1, so the notice goes into plain.
+\fancypagestyle{plain}{%
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\fancyfoot[L]{\small\color{gray}Public version: personal details withheld. Full CV available on request.}
+\fancyfoot[R]{\small\thepage}}
+\pagestyle{plain}
+\else
+\IfFileExists{personal-data.tex}{\input{personal-data.tex}}{\errmessage{personal-data.tex not found. Copy it from the Google Drive CV folder, or build cv-public.tex instead (see README.md)}}
+\fi
+
+\usepackage[hidelinks]{hyperref}
+
+\begin{document}
+
+% The photo is left out when \cvnophoto is defined (international variant).
+\noindent
+\ifdefined\cvnophoto
+\begin{minipage}[b]{\textwidth}
+\else
+\begin{minipage}[b]{0.7\textwidth}
+\fi
+{\LARGE\bfseries Bernd Kampl}\\[0.4em]
+{\large\bfseries Engineering Leader}\\[1.2em]
+\cvStreetAddress, \cvPostalCode{} Graz, Austria\\
+\href{mailto:bernd.kampl@gmail.com}{bernd.kampl@gmail.com} \textperiodcentered{} \cvPhone\\
+\href{https://blog.rubbad.uk}{blog.rubbad.uk} \textperiodcentered{} \href{https://www.linkedin.com/in/bernd-kampl-0597a494/}{linkedin.com/in/bernd-kampl-0597a494}
+\end{minipage}%
+\ifdefined\cvnophoto\else
+\hfill
+\begin{minipage}[b]{0.21\textwidth}
+\raggedleft\includegraphics[width=\textwidth]{DSC08898_small.jpg}
+\end{minipage}
+\fi
+\vspace{4pt}
+
+\section*{Profile}
+Engineering leader with 15+ years of building mobile apps and SDKs, 10 of them leading teams. At \textit{Anyline} I have led the same core engineering team since 2022 through several reorganizations and rounds of layoffs. Leadership kept me as team lead through each of them, and my team took on more scope every time. Today one team of five engineers handles the work of four former teams. All of Anyline's SDK and cloud development runs on the agentic engineering workflow I designed.
+
+\section*{Work Experience}
+\begin{longtable}{L!{\VRule}R}
+2022/01--ongoing&\textbf{Senior Software Engineer \& Team Lead} at computer-vision company \textit{Anyline GmbH}, maker of on-device OCR and scanning SDKs. Hired to lead the Mobile team and led it continuously as it grew to 14 engineers, including two sub-teams with their own leads. Carried out the reductions in my own team through every restructuring (engineers I had to let go are among my LinkedIn recommendations) and kept the rest of the team stable and delivering. \textbf{Today one team of five carries the work of four former teams}, having absorbed the shared Core, the \textit{Tire Tread} SDK and Cloud at the same release cadence.\\[0.4em]
+&\textbf{Fully remote leadership} of a team spread across Vienna, Graz and two sites in India, with a daily team sync, a culture of written documentation, and retrospectives every six weeks. Designed the sub-team structure with the CTO; engineers from the team grew into leading their own sub-teams. Hiring manager in about 30 first-round and 15 second-round interviews, including roles outside my own specialty (iOS, Cloud) and Engineering Manager hires. Owned the engineering roadmap together with Product and handled key customer escalations directly.\\[0.4em]
+&\textbf{Designed the agentic engineering workflow} that all of Anyline's SDK and cloud development runs on: a layered routing system that gives AI coding agents the context and conventions of every repository, and an AI-assisted, multi-pass code review integrated into CI.\\[0.4em]
+&\textbf{Responsible for delivery} of SDK releases v37 to v56 across native Android and iOS and five cross-platform wrappers, and prioritized moving the team to agile continuous delivery. Moved all CI to \textit{GitLab CI} and replaced an external build vendor with self-hosted Mac build infrastructure. Led a ``Road to 0 Security Vulnerabilities'' program (static analysis, penetration-test remediation, removal of hardcoded secrets). Prepared engineering for the yearly ISO 27001 audits, including the initial setup. Introduced \textit{Antora} as the SDK documentation platform.\\ \RowRule
+
+2016/04--2021/12&\textbf{Lead Android Developer} at \textit{iTranslate GmbH}, leading Android development (team of three) for \textit{iTranslate} and \textit{Typeright}. Owned the full Android lifecycle, including architecture, development, releases, and evaluating impact through app metrics. Joined as the second employee and grew with the company to over 40 people. The role shifted to architecture, planning, code reviews, and the hiring, evaluation and termination of team members.\\ \RowRule
+
+2014/04--2016/03&\textbf{Project management and full stack software engineering} at augmented reality and mobile apps specialist \textit{CodeFl{\"u}gel GmbH}. Completed all seven client projects, including four native Android apps and \textit{NodeJS} backends, leading teams of three to eight.\\
+\end{longtable}
+
+\section*{Selected Writing \normalfont\large on my blog, \href{https://blog.rubbad.uk}{blog.rubbad.uk}}
+\begin{longtable}{L!{\VRule}R}
+2026/10&\href{https://blog.rubbad.uk/2026/10/01/blog-measuring-software-engineering-before-and-after-agents.html}{\textit{In Which We Measure Software Engineering Before and After Agents}}: what changed once a small team worked with AI agents.\\ \RowRule
+2026/03, 2026/10&\href{https://blog.rubbad.uk/2026/03/05/blog-agents-meta-repo-pattern.html}{\textit{In Which We Give Our AI Agent a Map}} (\href{https://blog.rubbad.uk/2026/10/15/blog-agents-meta-repo-pattern-october-2026-update.html}{update}): context routing for AI agents.\\ \RowRule
+2026/07&\href{https://blog.rubbad.uk/2026/07/02/blog-interviewing-four-people-and-their-intern.html}{\textit{In Which I Interview Four People and Their Intern}}: interviews where candidates work with an AI agent.\\
+\end{longtable}
+
+\section*{Knowledge}
+\begin{longtable}{L!{\VRule}R}
+Leadership&Hiring (including Engineering Managers), performance reviews, 1-on-1s, candid feedback (Radical Candor), retrospectives, quarterly and roadmap planning, release management\\ \RowRule
+Engineering Practice&Agentic engineering with AI coding agents (Claude Code, Codex), CI/CD ownership, continuous delivery, version control (Git), application security, ISO 27001, architecture communication (C4), docs as code\\ \RowRule
+Mobile and SDKs&Android (primary), iOS, cross-platform (Flutter, React Native, Expo, Cordova, .NET, Kotlin/Compose Multiplatform), SDK distribution (Maven, CocoaPods, npm, NuGet, pub.dev)\\ \RowRule
+Programming&Kotlin, Java (strong background); C\texttt{++}, Swift, Dart, TypeScript/JavaScript (working knowledge)\\ \RowRule
+Languages&German (native), English (fluent), French, Latin, Spanish (basic)\\
+\end{longtable}
+
+\section*{Education \& Training}
+\begin{longtable}{L!{\VRule}R}
+2022--2023&\textit{Leadership To Go}, leadership program by Ferry Fischer (EEE Focus Consulting, Vienna). 10 half-day modules, completed with an exam and certificate.\\ \RowRule
+2010--2013&Graduate (MSc) studies in Telematics (computer science and electrical engineering) at Graz University of Technology (AT), graduated with honors. Master's thesis ``Characterization and Modelling of Server Energy Consumption'' at \textit{Stratergia Ltd.}\ in Dublin (IE), with University College Dublin. Exchange term at Kennesaw State University (US) in 2011.\\ \RowRule
+2006--2010&Undergraduate (BSc) studies in Telematics at Graz University of Technology (AT). Bachelor's thesis ``3D Features for Action Recognition''.\\
+\end{longtable}
+
+\section*{Personal Projects}
+\begin{longtable}{L!{\VRule}R}
+2014--2020&Android app \textit{Where the hell are you?} (100,000 downloads), an instant-print photo box for my own wedding (Android, Raspberry Pi, Python), and a Home Assistant smart home.\\
+\end{longtable}
+
+\end{document}

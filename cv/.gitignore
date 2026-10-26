@@ -1,0 +1,27 @@
+# LaTeX build output
+*.aux
+*.bbl
+*.blg
+*.dvi
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# SENSITIVE: real personal data and the full CV built from it. Never commit.
+personal-data.tex
+cv.pdf
+cv-international.pdf
+
+# Application documents stay in Google Drive only
+cover_letter/
+
+# Editor backups
+*~
+*.backup
+
+# OS junk
+Thumbs.db
+.DS_Store
