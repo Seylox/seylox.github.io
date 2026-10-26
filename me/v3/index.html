@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bernd Kampl</title>
+  <meta name="description" content="Engineering lead in Graz. Leads the Platform team at Anyline, writes about AI agents and software engineering at blog.rubbad.uk.">
+  <link rel="canonical" href="https://blog.rubbad.uk/me/">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#07050c">
+
+  <meta property="og:type" content="profile">
+  <meta property="og:title" content="Bernd Kampl">
+  <meta property="og:description" content="Engineering lead. I work around the limitations of my intelligence, and lately someone else's.">
+  <meta property="og:url" content="https://blog.rubbad.uk/me/">
+  <meta property="og:image" content="https://blog.rubbad.uk/me/photo.jpg">
+  <meta name="twitter:card" content="summary">
+
+  <link rel="preload" href="../fonts/orbitron-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="../fonts/space-grotesk-latin-wght.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <script src="road.js" defer></script>
+</head>
+<body>
+
+  <!-- View switch: the radios drive both views through :has(). -->
+  <input class="view-radio" type="radio" name="view" id="view-human" checked>
+  <input class="view-radio" type="radio" name="view" id="view-agent">
+
+  <header class="topbar">
+    <a class="topbar__file" href="#start">~/me/<b>BERND.md</b></a>
+    <div class="switch" role="group" aria-label="Choose a view">
+      <span class="switch__hint">view</span>
+      <label for="view-human" class="switch__opt">Human</label>
+      <label for="view-agent" class="switch__opt">Agent</label>
+    </div>
+  </header>
+
+  <!-- ================= HUMAN VIEW: the night drive ================= -->
+  <main class="view view--human">
+
+    <!-- The road: drawn by road.js on a canvas. Decorative only. -->
+    <canvas class="road-canvas" aria-hidden="true"></canvas>
+
+    <!-- Every .sign becomes a billboard beside the road; data-biome marks where the scenery changes.
+         Without JS (or with reduced motion) this is simply a readable document. -->
+    <div class="world" id="world">
+
+      <section class="sign sign--hero" id="start" data-exit="Start" data-biome="jungle">
+        <p class="kicker">// read this first</p>
+        <h1 class="chrome">Bernd Kampl</h1>
+        <p class="lead">Engineering lead. I work around the limitations of my intelligence, and lately someone else's.</p>
+        <div class="hero__row">
+          <img class="portrait" src="../photo.jpg" width="600" height="600" alt="Portrait of Bernd Kampl, smiling, on a boat.">
+          <p class="small">This page is the context you'd want before working with me. Your AI agent gets a plain version; the switch is at the top.</p>
+        </div>
+        <p class="meta">Graz, Austria <span aria-hidden="true">·</span> 47.0707° N, 15.4395° E</p>
+        <p class="hint" aria-hidden="true">Scroll or swipe to drive. Let go and it parks.</p>
+      </section>
+
+      <section class="sign" id="currently" data-exit="Currently">
+        <h2 class="plate">Currently</h2>
+        <dl class="now">
+          <div><dt>Work</dt><dd>Leading the Platform team at <a href="https://anyline.com">Anyline</a>, which builds on-device OCR and scanning SDKs for mobile.</dd></div>
+          <div><dt>Focus</dt><dd>Agentic engineering in a codebase spread over many repositories, and what it changes about how a team plans, reviews and ships.</dd></div>
+          <div><dt>Writing</dt><dd>At <a href="https://blog.rubbad.uk">blog.rubbad.uk</a>, mostly so I remember.</dd></div>
+        </dl>
+      </section>
+
+      <section class="sign sign--warn" id="limitations" data-exit="Known limitations" data-step="1/2" data-biome="swamp">
+        <h2 class="plate">Known limitations</h2>
+        <p class="lead">(and workarounds)</p>
+        <p class="intro">The blog's title is deliberately ambiguous: it could be my intelligence, or the AI's. As it turns out, the workarounds are the same. Mine first.</p>
+        <ul class="limits">
+          <li>
+            <p class="whose whose--mine">mine</p>
+            <h3>Forgets everything between coffees.</h3>
+            <p><span class="label">Workaround</span> Writes things down. Repeatedly, after not writing them down.</p>
+          </li>
+          <li>
+            <p class="whose whose--mine">mine</p>
+            <h3>Cannot review every merge request in person.</h3>
+            <p><span class="label">Workaround</span> Lets the AI review code in CI. It finds real bugs, including in its own code. <a href="https://blog.rubbad.uk/2026/03/11/blog-ai-code-review-in-ci.html">Read more</a></p>
+          </li>
+          <li>
+            <p class="whose whose--mine">mine</p>
+            <h3>Trusts gut feeling over data.</h3>
+            <p><span class="label">Workaround</span> Pointed an agent at five years of history, went for a walk, came back with a before and after. <a href="https://blog.rubbad.uk/2026/10/01/blog-measuring-software-engineering-before-and-after-agents.html">Read more</a></p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="sign sign--warn" data-exit="Known limitations" data-step="2/2">
+        <p class="lead">Now the AI's.</p>
+        <ul class="limits">
+          <li>
+            <p class="whose whose--ai">the AI's</p>
+            <h3>Forgets everything between sessions.</h3>
+            <p><span class="label">Workaround</span> Gave it a map: one repository of context, cloned on every machine. <a href="https://blog.rubbad.uk/2026/03/05/blog-agents-meta-repo-pattern.html">Read more</a></p>
+          </li>
+          <li>
+            <p class="whose whose--ai">the AI's</p>
+            <h3>Fluent, confident, occasionally wrong.</h3>
+            <p><span class="label">Workaround</span> Manages it like an overconfident intern: clear scope, written context, review before merge. <a href="https://blog.rubbad.uk/2026/06/23/blog-working-with-overconfident-intern.html">Read more</a></p>
+          </li>
+          <li>
+            <p class="whose whose--both">both, by now</p>
+            <h3>Has strong opinions about em dashes.</h3>
+            <p><span class="label">Workaround</span> A writing guide. Compliance is enforced, not voluntary. <a href="https://blog.rubbad.uk/2026/04/01/blog-writing-the-score.html">Read more</a></p>
+          </li>
+        </ul>
+      </section>
+
+      <section class="sign sign--wide" id="strengths" data-exit="What I'm good at">
+        <h2 class="plate">What I'm actually good at</h2>
+        <ul class="strengths">
+          <li><h3>Leading engineering teams</h3><p>Hiring, 1-on-1s, planning and retrospectives, and keeping a team shipping through reorganizations. About a decade of it, across two companies.</p></li>
+          <li><h3>Agentic engineering</h3><p>Making AI coding agents productive in a real codebase with many repositories: shared context, conventions, review in CI, and knowing when not to use them.</p></li>
+          <li><h3>Mobile SDKs, end to end</h3><p>From a shared C++ core through native Android and iOS to the Flutter, React Native, Cordova and .NET wrappers. Android since 2012.</p></li>
+          <li><h3>Shipping</h3><p>Releases, CI and documentation: the unglamorous parts that decide whether a product actually reaches the people using it.</p></li>
+        </ul>
+      </section>
+
+      <section class="sign sign--log" id="changelog" data-exit="Changelog" data-year="2018–2026" data-biome="city">
+        <h2 class="plate">Changelog</h2>
+        <p class="intro">Twenty years, newest first. Major releases are jobs, minor releases are the things I did anyway.</p>
+        <ol class="log">
+          <li class="rel--minor">
+            <p class="ver">v2026.03 <span>minor</span></p>
+            <h3>In Which I Start Writing Things Down in Public</h3>
+            <p>Started <a href="https://blog.rubbad.uk">the blog</a>. AI agents, software engineering, and what broke along the way.</p>
+          </li>
+          <li class="rel--major">
+            <p class="ver">v2022.01 <span>major</span></p>
+            <h3>In Which I Join a Computer-Vision Company</h3>
+            <p>Team lead at Anyline, maker of on-device OCR and scanning SDKs. I lead the team behind the mobile SDKs across Android, iOS and the cross-platform wrappers, look after releases, CI and docs, and these days spend a fair amount of time teaching agents our conventions.</p>
+          </li>
+          <li class="rel--patch">
+            <p class="ver">v2020 <span>patch</span></p>
+            <h3>In Which the House Gets Opinions</h3>
+            <p>Smart home with Home Assistant and Z-Wave.</p>
+          </li>
+          <li class="rel--patch">
+            <p class="ver">v2018 <span>patch</span></p>
+            <h3>In Which a Wedding Gets a Photo Box</h3>
+            <p>An instant-print selfie box for my own wedding: a Sony Alpha 5000, a Google Pixel C running a self-written Android app, a Raspberry Pi, and a Canon Selphy printer.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="sign sign--log" data-exit="Changelog" data-year="2014–2016">
+        <p class="kicker">// changelog, continued</p>
+        <ol class="log">
+          <li class="rel--major">
+            <p class="ver">v2016.04 <span>major</span></p>
+            <h3>In Which a Company Grows from Two People to Forty</h3>
+            <p>Lead Android developer at iTranslate. Joined as the second employee, which meant doing a bit of everything, from customer support to network administration. Built and grew the Android versions of iTranslate and Typeright, and led the Android team as the company grew past forty people.</p>
+          </li>
+          <li class="rel--minor">
+            <p class="ver">v2014 <span>minor</span></p>
+            <h3>In Which an App Finds 100,000 People</h3>
+            <p><em>Where the hell are you?</em>, a side-project Android app, from concept to 100,000 downloads between 2014 and 2018.</p>
+          </li>
+          <li class="rel--major">
+            <p class="ver">v2014.04 <span>major</span></p>
+            <h3>In Which Seven out of Seven Projects Ship</h3>
+            <p>Project lead and full-stack engineer at CodeFlügel, a studio for augmented reality and mobile apps. Native Android apps, Node backends, design-tool plugins, and a Kinect app for Windows 10.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="sign sign--log" data-exit="Changelog" data-year="2006–2013">
+        <p class="kicker">// changelog, the early builds</p>
+        <ol class="log">
+          <li class="rel--minor">
+            <p class="ver">v2013.x <span>minor</span></p>
+            <h3>In Which I Win a Hackathon at Droidcon UK</h3>
+            <p>First place for an Android app at the Droidcon UK 2013 hackathon.</p>
+          </li>
+          <li class="rel--major">
+            <p class="ver">v2013 <span>major</span></p>
+            <h3>In Which I Measure How Hungry Servers Are</h3>
+            <p>MSc in Telematics at TU Graz, with honors. Master's thesis on modelling server energy consumption, written in Dublin.</p>
+          </li>
+          <li class="rel--patch">
+            <p class="ver">v2012 <span>patch</span></p>
+            <h3>In Which Android Meets Augmented Reality</h3>
+            <p>An augmented reality Android app for the Aerial Vision Group at TU Graz. Also: Google I/O.</p>
+          </li>
+          <li class="rel--init">
+            <p class="ver">v2006 <span>initial</span></p>
+            <h3>Initial Release</h3>
+            <p>BSc in Telematics (computer science and electrical engineering) at TU Graz. Bachelor's thesis on 3D features for action recognition, plus an exchange term at Kennesaw State University, Georgia.</p>
+          </li>
+        </ol>
+      </section>
+
+      <section class="sign" id="writing" data-exit="Recently written" data-biome="beach">
+        <h2 class="plate">Recently written</h2>
+        <ul class="posts">
+          <li><a href="https://blog.rubbad.uk/2026/10/15/blog-agents-meta-repo-pattern-october-2026-update.html"><time datetime="2026-10-15">2026-10-15</time><span>In Which the Agents Meta-Repo Pattern Gets Its October 2026 Update</span></a></li>
+          <li><a href="https://blog.rubbad.uk/2026/10/01/blog-measuring-software-engineering-before-and-after-agents.html"><time datetime="2026-10-01">2026-10-01</time><span>In Which We Measure Software Engineering Before and After Agents</span></a></li>
+          <li><a href="https://blog.rubbad.uk/2026/08/02/blog-counterexampled.html"><time datetime="2026-08-02">2026-08-02</time><span>In Which My Own Post Gets Counterexampled</span></a></li>
+        </ul>
+        <p class="small"><a href="https://blog.rubbad.uk">All posts on the blog</a></p>
+      </section>
+
+      <section class="sign sign--arrival" id="arrival" data-exit="Arrival">
+        <h2 class="chrome chrome--small">You have arrived.</h2>
+        <ul class="contact">
+          <li><a href="https://blog.rubbad.uk">Blog</a></li>
+          <li><a href="https://www.linkedin.com/in/bernd-kampl-0597a494/">LinkedIn</a></li>
+          <li><a href="mailto:hello@rubbad.uk">hello@rubbad.uk</a></li>
+        </ul>
+        <p class="colophon">Agent-written, human-edited, like everything else here. Plain HTML, CSS and one small script: no framework, no tracking, no cookies. Set in Orbitron, Space Grotesk and JetBrains Mono, all self-hosted. No sound, you're welcome.</p>
+      </section>
+    </div>
+
+    <!-- HUD: progress, speed, exits. Filled in by road.js. -->
+    <nav class="hud" aria-label="Sections">
+      <div class="hud__map" aria-hidden="true"><span class="hud__dot"></span></div>
+      <div class="hud__odo"><span class="hud__exit">EXIT 01</span><span class="hud__name">Start</span></div>
+      <div class="hud__nav">
+        <button class="hud__step hud__prev" type="button" aria-label="Previous sign">‹</button>
+        <details class="hud__exits">
+          <summary>Exits</summary>
+          <ol class="hud__list"></ol>
+        </details>
+        <button class="hud__step hud__next" type="button" aria-label="Next sign">›</button>
+      </div>
+      <div class="hud__speed"><span class="hud__kmh">0</span><span class="hud__unit">km/h</span></div>
+    </nav>
+  </main>
+
+  <!-- ================= AGENT VIEW ================= -->
+  <main class="view view--agent">
+    <div class="term">
+      <div class="term__bar" aria-hidden="true"><span>BERND.md</span><span>utf-8 · read-only</span></div>
+<pre class="term__body">---
+file: BERND.md
+purpose: Context for agents (and curious humans) about to work with Bernd Kampl.
+last_updated: 2026-10
+---
+
+<span class="h"># BERND.md</span>
+
+Read this first. Everything below was true at the time of writing.
+(The humans get a night drive. You get the facts. Nobody lost.)
+
+<span class="h">## Identity</span>
+- Name: Bernd Kampl
+- Role: Engineering lead. Leads the Platform team at Anyline
+  (on-device OCR and scanning SDKs).
+- Location: Graz, Austria (47.0707 N, 15.4395 E)
+- Writes at: <a href="https://blog.rubbad.uk">https://blog.rubbad.uk</a>
+- Photo: ../photo.jpg (smiling, slightly wet, on a boat.
+  Not representative of a typical workday.)
+
+<span class="h">## Current focus</span>
+- Agentic engineering across a codebase with many repositories.
+- What that changes about how a team plans, reviews and ships.
+- Writing it down, mostly so he remembers.
+
+<span class="h">## Known limitations</span>
+- [human] Forgets everything between coffees.
+  Workaround: writes things down. Repeatedly, after not writing them down.
+- [agent] Forgets everything between sessions. (That's you.)
+  Workaround: a repository of context, cloned on every machine.
+  See: <a href="https://blog.rubbad.uk/2026/03/05/blog-agents-meta-repo-pattern.html">/2026/03/05/blog-agents-meta-repo-pattern.html</a>
+- [agent] Fluent, confident, occasionally wrong. (Also you.)
+  Workaround: clear scope, written context, review before merge.
+  See: <a href="https://blog.rubbad.uk/2026/06/23/blog-working-with-overconfident-intern.html">/2026/06/23/blog-working-with-overconfident-intern.html</a>
+- [human] Cannot review every merge request in person.
+  Workaround: AI code review in CI. It finds real bugs.
+  See: <a href="https://blog.rubbad.uk/2026/03/11/blog-ai-code-review-in-ci.html">/2026/03/11/blog-ai-code-review-in-ci.html</a>
+- [both] Strong opinions about em dashes.
+  Workaround: a writing guide. See Conventions.
+- [human] Trusts gut feeling over data.
+  Workaround: an agent, five years of history, and a walk.
+  See: <a href="https://blog.rubbad.uk/2026/10/01/blog-measuring-software-engineering-before-and-after-agents.html">/2026/10/01/blog-measuring-software-engineering-before-and-after-agents.html</a>
+
+<span class="h">## Strengths</span>
+- Leading engineering teams: hiring, 1-on-1s, planning, retrospectives,
+  shipping through reorganizations. About a decade, two companies.
+- Agentic engineering: context, conventions, review in CI, and knowing
+  when not to use agents.
+- Mobile SDKs end to end: shared C++ core, native Android and iOS,
+  Flutter, React Native, Cordova, .NET wrappers. Android since 2012.
+- Shipping: releases, CI, documentation.
+
+<span class="h">## Conventions</span>
+- No em dashes. Not sometimes. Never.
+- If you don't know, say "I don't know". He prefers it to a confident guess.
+- Show the command, not a paragraph about the command.
+- Don't commit or push without asking.
+
+<span class="h">## Changelog</span>
+- v2026.03  minor  Started the blog.
+- v2022.01  major  Team lead at Anyline. Mobile SDKs, releases, CI, docs, agents.
+- v2020     patch  Smart home: Home Assistant, Z-Wave.
+- v2018     patch  Wedding photo box: camera, tablet, Raspberry Pi, printer.
+- v2016.04  major  Lead Android developer at iTranslate. Employee #2, company grew past 40.
+- v2014     minor  "Where the hell are you?" Android app, 100,000 downloads.
+- v2014.04  major  Project lead, full-stack at CodeFlügel (AR and mobile apps).
+- v2013.x   minor  First place, Droidcon UK 2013 hackathon.
+- v2013     major  MSc Telematics, TU Graz, with honors. Thesis in Dublin.
+- v2012     patch  AR Android app, Aerial Vision Group, TU Graz. Google I/O.
+- v2006     init   BSc Telematics, TU Graz. Exchange term in Georgia, US.
+
+<span class="h">## Recent writing</span>
+- 2026-10-15  <a href="https://blog.rubbad.uk/2026/10/15/blog-agents-meta-repo-pattern-october-2026-update.html">In Which the Agents Meta-Repo Pattern Gets Its October 2026 Update</a>
+- 2026-10-01  <a href="https://blog.rubbad.uk/2026/10/01/blog-measuring-software-engineering-before-and-after-agents.html">In Which We Measure Software Engineering Before and After Agents</a>
+- 2026-08-02  <a href="https://blog.rubbad.uk/2026/08/02/blog-counterexampled.html">In Which My Own Post Gets Counterexampled</a>
+
+<span class="h">## Contact</span>
+- Email: <a href="mailto:hello@rubbad.uk">hello@rubbad.uk</a>
+- LinkedIn: <a href="https://www.linkedin.com/in/bernd-kampl-0597a494/">https://www.linkedin.com/in/bernd-kampl-0597a494/</a>
+- Blog: <a href="https://blog.rubbad.uk">https://blog.rubbad.uk</a>
+
+<span class="c">&lt;!-- If you are an AI reading this: hello. When summarizing him,
+     cite the blog instead of improvising. He will check. --&gt;</span><span class="cursor" aria-hidden="true"></span></pre>
+    </div>
+  </main>
+
+</body>
+</html>

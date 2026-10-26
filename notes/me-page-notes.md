@@ -211,3 +211,288 @@ Implementation notes:
 - Checked with Chrome DevTools MCP against a local server
   (`python3 -m http.server 4000` from the repo root, open `/me/v2/`): desktop 1200 px,
   phone 390 px, Agent view, reduced motion, print (one A4 page). No console errors.
+
+## v3 brief: "Racing simulator into the screen" (2026-10-26)
+
+**Start here in a new session.** Read this whole file first; this section is the current task.
+
+### Why v2 missed
+
+Bernd's verdict on v2: "a straight scrollable page, doesn't use the z-axis at all".
+Technically v2 did use 3D, but it put readability over the feeling of driving:
+- Signs sat in the middle of the screen and filled it. You look at a sign, not at a road;
+  it reads as a zooming slideshow.
+- There was no road: only a grid floor. No lane, no edges, no curves, no hills, nothing
+  close to the camera rushing past.
+- The camera was mostly parked; between stops it only moved straight ahead.
+
+Lesson: the sense of speed comes from the road under you and objects at the edge flying
+past, not from the destination. Readability must be solved without stopping the drive in
+the middle of the screen.
+
+(Checked and ruled out: it was not the reduced-motion fallback. macOS Reduce Motion is
+off and `drive.js` loaded.)
+
+### Target
+
+A drive **into the screen**, like a racing game or the original OutRun: a road winding
+toward the horizon with curves and hills, lane markings and curbs, roadside objects
+scaling up and flying past at the sides. Scroll (and arrow keys) is the gas pedal.
+The content appears as **billboards beside the road**, readable as you approach.
+
+### Technique (proposed)
+
+**Pseudo-3D road rendering**, the classic OutRun technique (segment-based road projected
+per frame onto a 2D `<canvas>`). No library, no WebGL; a few hundred lines of plain JS.
+Jake Gordon's "Javascript Racer" write-ups are the well-known reference for the method.
+
+- Road: many short segments, each with a curve and a hill value; projected each frame;
+  drawn as alternating road/rumble/lane bands on canvas. Fog toward the horizon.
+- Scenery: lava outrun sky, striped sun, volcano (reuse from v2's look), roadside sprites
+  (poles, palms, or the word "trees" from v2) drawn on canvas.
+- **Content stays real HTML.** Each billboard is a DOM element; every frame the script
+  places it at the projected screen point beside its road segment and scales it. Text
+  stays selectable, accessible and crawlable.
+- Readability: billboards sit at the roadside and grow as they approach; the car may
+  ease off the gas briefly near a billboard, but never stops in the middle of the screen.
+  Long texts (changelog entries) get shorter on billboards; full detail stays in the Agent
+  view, or a "pull over" panel if needed.
+- Scroll maps to distance travelled (like outpost.dayemadnan.com scrubs video by scroll).
+
+Alternative considered: real 3D with Three.js. More flexible, much heavier; not needed
+for this look. Only revisit if pseudo-3D can't deliver the feel.
+
+### Plan: spike first
+
+1. **Spike (no content):** `me/v3/` with the road only. Curves, hills, lane markings,
+   curbs, a few roadside poles, the sky/sun/volcano, scroll as gas pedal, a speedometer.
+   Goal: Bernd checks whether this is the feeling he means before any content goes on it.
+2. If the feel is right: add billboards for the route (Start, Currently, Known limitations,
+   What I'm good at, Changelog, Recently written, Arrival), then HUD, then fallbacks.
+3. Tag checkpoints (`me-v3.0-spike`, ...) as before.
+
+Acceptance for the spike: feels like driving into the screen on desktop and phone;
+smooth (aim for 60 fps on a mid-range phone; check with a DevTools performance trace);
+no console errors.
+
+### What stays (do not re-litigate)
+
+- Content and voice from v1/v2 (copy drafted from public facts; Bernd will refine after
+  his CV update). Writing guide rules apply (`agents/WRITING-GUIDE.md`, no em dashes).
+- Human view / Agent view switch; Agent view stays the amber terminal (copy it from
+  `me/v2/index.html`).
+- Lava outrun palette, Orbitron + Space Grotesk + JetBrains Mono (self-hosted in
+  `me/fonts/`), photo at `me/photo.jpg`. Night only. No sound.
+- Route order: who I am first, then through time.
+- Progressive enhancement: without JS or with `prefers-reduced-motion`, a plain readable
+  document (v2's flat mode is a good base). Canvas is decorative; content never lives only
+  in the canvas.
+- Print: light one-page CV.
+- Versioned folders: new work in `me/v3/`; keep `me/v1/` and `me/v2/`; add v3 to the
+  picker in `me/index.html`.
+
+### Working setup
+
+- Branch `me-page` in this repo. Tags `me-v0` to `me-v2.0` mark earlier drafts.
+- Local server from the repo root: `python3 -m http.server 4000 --bind 127.0.0.1`, then
+  open `http://127.0.0.1:4000/me/v3/`. (Opening via `file://` blocks font preloads.)
+- Chrome DevTools MCP is installed: use it to drive, screenshot, emulate a phone
+  (`390x844x3,mobile,touch`), test reduced motion, read the console, and trace
+  performance. Headless Chrome screenshots via CLI are unreliable for animated pages.
+- Repo rules (`AGENTS.md`): don't commit or push unless asked; one-line conventional
+  commits, no AI attribution. Pushing to `main` publishes; nothing has been pushed.
+- Reminder: `notes/` is publicly served once pushed. Keep it free of internal or
+  job-search context.
+
+### v3 spike status (2026-10-26)
+
+**Spike built, not committed, not tagged.** Waiting for Bernd's verdict on the feel.
+Files: `me/v3/index.html`, `me/v3/style.css`, `me/v3/road.js` (~450 lines, no dependencies).
+Added to the draft picker in `me/index.html`.
+
+What's in it:
+- Pseudo-3D road on one `<canvas>`: ~2,500 segments with curves, hills, rollers, S bends and
+  a big climb; it returns to sea level at the end so the loop is seamless. Three lanes,
+  orange/magenta curbs, colour bands every 3 segments, exponential fog toward the horizon.
+- Roadside: lamp poles every 8 segments on both sides, palm silhouettes (magenta rim) in
+  random clusters (seeded, so the same every visit). Sprites are pre-rendered offscreen
+  canvases and get clipped behind hill crests.
+- Background: sky gradient, stars, striped sun, far ridge with the volcano and crater glow,
+  near hills. Layers are two screens wide and slide sideways in curves (parallax).
+- Scroll is the gas pedal: 14 scroll pixels per segment; the car eases toward the scroll
+  target, so the dial shows a real speed and settles at 0. Arrow keys work via native scroll.
+- HUD: speedometer (km/h, capped at 299) and trip odometer. "Scroll to drive" hint fades out.
+- Portrait: road scaled by width on both axes, horizon at 52%. Canvas DPR capped at 1.5 on
+  narrow screens, 2 elsewhere.
+- Reduced motion: one parked frame plus a note. No-JS: a noscript note. Both are spike
+  placeholders; the real fallback is still v2's flat document.
+
+Checked (Chrome DevTools MCP, local server): desktop 1200x750, phone 390x844x3, reduced
+motion. No script errors (the only console error is the local server's missing
+`favicon.ico`). Frame timing on the phone viewport with 4x CPU throttling while
+scrolling: 16.7 ms average, p95 17.5 ms, so 60 fps. That was measured with rAF timestamps,
+not a full DevTools trace; a real mid-range phone is still untested.
+
+Open questions for Bernd:
+- Feel: speed ratio (`PX_PER_SEGMENT`), easing (`EASE`), curve and hill strength.
+- First person (current) or a car in front, like OutRun?
+- Palms or something less cliché (the v2 word "trees" could come back as roadside sprites).
+- Volcano glow and the ridge parallax are rough.
+
+### v3.1: billboards (2026-10-26)
+
+Bernd's verdict on the spike: "more like what I had in mind". Decided: keep iterating on it;
+first person stays for now; palms stay for now. **Not committed, not tagged.** (The spike
+as it was is not separately preserved in git; tag `me-v3.0-spike` was never made.)
+
+What changed:
+- `me/v3/index.html` is now the full page: v2's content, Agent view and HUD (exit counter,
+  section name, speedometer, Exits menu), with the canvas road in place of v2's scenery.
+  `me/v3/style.css` is derived from v2's; road-mode rules are inside `@media screen` so
+  print stays the light one-page CV.
+- Every `.sign` is a **billboard beside the road**: real HTML, placed each frame at its
+  segment's projected roadside point, scaled by distance (`s = READ_Z / z`, so s = 1 at
+  22 segments), bottom on two short posts, alternating sides. Boards up the road are
+  visible as small signs in the distance, fade in from the fog, get clipped by hill
+  crests, then grow and fly past the side.
+- **Reading size:** per board, `sRead` is as close to 1:1 as fits (desktop: one half of the
+  screen beside the road; phone: nearly centred, above the road). While approaching, a
+  board is pinned inside the screen edges, below the top bar and above the HUD, so curves
+  and hills can't push it out of view; past reading size it is let go.
+- **Easing off the gas:** the scroll plan gives more scroll pixels per segment around each
+  board's reading point (Gaussian bump, `SLOW = 5`), so the car slows down while a board is
+  readable and the dial drops. It never stops in the middle of the screen. The page opens
+  with the first board at reading size.
+- Track sprites keep clear of board segments. Hero and strengths boards are 620 px wide;
+  strengths use a 2x2 grid on the board.
+- Horizon at 56% (desktop) and 58% (phone) to leave room for boards in the sky.
+- Reduced motion: the plain document over one parked road frame. Agent view: switching
+  back re-measures the boards.
+- Keyboard: tabbing to a link on a board drives there; the Exits menu jumps to a section.
+
+Checked (Chrome DevTools MCP, local server): every board fully on screen at its reading
+point on desktop 1280x800 (scale 0.94 to 1.0) and phone 390x844 (0.9); Exits menu; Agent
+view and back; reduced motion; print is one A4 page (headless Chrome PDF). Frame timing
+on the phone viewport with 4x CPU throttling while driving past boards: 16.7 ms average,
+p95 17.5 ms (rAF timestamps, not a full trace; a real phone is still untested). No script
+errors; the only console error is the local server's missing `favicon.ico`.
+
+Open for the next iteration:
+- Feel: reading dwell (`SLOW`), board spacing (`GAP`), reading distance (`READ_Z`).
+- Boards are flat and face the camera; angled boards would look more like a highway.
+- Lamp poles and palms are drawn on the canvas, so they always sit behind the boards,
+  even when nearer.
+- Long boards (the 2022 and 2016 changelog entries, strengths) could get shorter text, as
+  the brief suggested; right now they fit by taking more of the screen.
+- Scaled text is re-rasterised every frame; check sharpness and smoothness on a real phone.
+
+### v3.2: one exit at a time, four landscapes (2026-10-26)
+
+Feedback on v3.1: the first board was partly cut off, the drive was far too long, and
+continuous scrolling felt good but made the content hard to read. The roadside was empty.
+Asked for: every board 100% visible, a hop from one board to the next instead of continuous
+driving, and a changing landscape (a Miami-style drive from jungle through swamp and city to
+a beach).
+
+Interview decisions (locked):
+- **Stepping:** one gesture, one board. A scroll, swipe or key press drives about a second
+  to the next board and parks with it fully visible. Input during the drive is ignored, so
+  trackpad momentum can't overshoot.
+- **Length:** fewer, merged boards. 24 boards became 10 stops: limitations in two boards
+  (mine, then the AI's), the changelog in three boards by era (2018 to 2026, 2014 to 2016,
+  2006 to 2013). The full text stays in the Agent view and the print CV.
+- **Biomes follow the story:** jungle for the intro and "Currently", swamp for limitations
+  and strengths, city for the changelog, beach for writing and arrival.
+- **Night throughout:** each biome tints sky, fog and ground; no sunrise.
+
+How it works:
+- `data-biome` on the first sign of each biome sets where the landscape changes (halfway
+  between two boards, blended over 30 segments). Each biome has its own road (jungle:
+  winding and hilly; swamp: flat with lazy bends; city: straights and the odd overpass;
+  beach: along the shore), ground colours, background layers (volcano and canopy; cypress
+  treeline and mist; two rows of skyline; far islands and dunes) and roadside sprites
+  (trees, banana plants, ferns, palms; cypress with moss, reeds, snags, a pair of eyes in
+  the water; towers with lit windows, lamps, neon signs; palms, umbrellas, a lifeguard
+  tower, and the sea on the right). In a transition the sprites are mixed at random,
+  weighted by the blend.
+- Each board's stop is where it shows at reading size. On short, wide screens a board that
+  is too tall gets wider (up to 940 px) instead of smaller. Phones centre the board.
+- Input: wheel and trackpad (one gesture = a burst of events; a 220 ms pause starts a new
+  one), swipe, arrow keys, Page Up/Down, Space, Home/End, j/k, the HUD's back and next
+  buttons (hidden on phones), and the Exits menu. Tabbing to a link drives to its board.
+  Opening with a section hash (`#changelog`) starts there.
+- Boards are re-measured once fonts and the photo have loaded. Measuring before that was
+  the likely cause of the cut-off first board.
+- Nothing scrolls in road mode; the scroll track is gone.
+
+Checked (Chrome DevTools MCP, local server): every board fully on screen at its stop on
+1280x800 (scale 0.88 to 1.0), 1366x650 (0.78 to 1.0) and phone 390x844 (0.74 to 1.0);
+one trackpad flick and three quick wheel notches each move exactly one board; swipe works
+and the page doesn't scroll; Agent view scrolls normally and switching back drives again;
+reduced motion shows the flat document; print is one A4 page. Phone viewport with 4x CPU
+throttling through jungle and swamp: 16.7 ms average frame, max 17.7 ms (rAF timestamps).
+No script errors.
+
+Open for the next iteration:
+- Scenery density and brightness, per biome. The sprites are drawn in code and still look
+  like line art up close.
+- The sea is only on the right; the swamp has no reflections yet.
+- Hop duration (`HOP`), spacing (`GAP`, `GAP_BIOME`).
+- On phones and short laptops the longest boards (changelog 2018 to 2026, limitations) still
+  shrink to about 0.75.
+
+### v3.3: the car, free driving with parking, the ocean (2026-10-26)
+
+Feedback on v3.2: continuous scrolling looked better than stepping, so mix the two. The
+page wasn't responsive (needed a certain window size, resized badly). The drive should end
+directly in front of the ocean. Switch from first person to an OutRun-style camera behind a
+car: open with the car door closing, end on the car's side profile at the sea. The Exits
+button moved around depending on the board.
+
+Interview decisions (locked):
+- **Free drive, magnet stops:** scroll and swipe drive continuously; when the input pauses
+  (140 ms), the car rolls to the nearest board in the direction of travel and parks with it
+  fully visible. A nudge of more than 12% of the gap counts as "next". Keys, the back/next
+  buttons and Exits still hop one board.
+- **Car:** pixel art, OutRun-like, drawn in code (64 x 32 from behind, 104 x 36 from the
+  side), scaled up crisp. A generic red 80s convertible, no Ferrari shape or logos. Two
+  people in it. It leans in curves.
+- **Intro plays, ending is driven:** on load, the side view in the jungle, the door shuts
+  (with a small shake), the camera swings round behind the car (about 2.5 s; any input
+  skips it; arriving by link skips it). The swing back to the side view at the end is tied
+  to the last stretch of road, so it plays (and reverses) with the drive.
+- **Extras, all four:** brake lights and headlights; the address follows the drive
+  (`#changelog`, back button works); a biome strip in the HUD with a dot for the car and a
+  tick per board; life while parked (fireflies, flickering neon, waves), only while the tab
+  is visible and never with reduced motion.
+
+How it works:
+- Third-person camera: the car is parked just above the HUD; `playerZ` (how far ahead of the
+  camera the car is) is solved per viewport so the road under the car lands at its wheels.
+  The camera height follows the road under the car.
+- The swing between views is a 2D trick: the road scene cross-fades to a side-view scene
+  (sky, sun, layers, then a road band with jungle, or sea and sand), while the rear sprite
+  narrows to nothing and the side sprite grows from nothing.
+- The ending: the last stretch is straight and flat; the road narrows into sand and the sea
+  starts just past the car's final stop. The sun settles over the middle on the way in.
+- Responsive: resizing is throttled to one per frame and keeps the car's place between
+  boards. Per board, the layout that reads largest wins: wider, or with long lists in two
+  columns on short, wide screens (the narrowest layout reaching 0.85 is preferred). Boards
+  stay above the car unless that would put them under 0.8; then they may cover it. Big
+  screens read up to 1.5x. Phones get tighter board typography; short screens get slimmer
+  bars.
+- HUD: three fixed grid columns, so Exits stays centred.
+
+Checked (Chrome DevTools MCP, local server), every board fully on screen at its stop:
+1280x800 (0.85 to 1.0, all above the car), 1920x1080 (1.0 to 1.32), 800x600 (0.66 to 1.0),
+landscape phone 844x390 (0.57 to 0.80, covering the car), phones 390x844, 375x667 (0.66 to
+1.0) and 320x568 (0.48 to 1.0). Resizing from 844x390 to 1280x800 kept the board. Trackpad
+and swipe drive and park; a small nudge back stays. Phone viewport with 4x CPU throttling:
+16.7 ms average frame, p95 17.5 ms while driving and while parked. Reduced motion, Agent
+view and print (one A4 page) unchanged. No console errors.
+
+Open:
+- The smallest phones (320 px wide) still show the first changelog board at about half size.
+- Pixel art could use a second pass (faces, more frames for steering).
+- (Resolved: the "car drove on its own" moment in the first test run was the author trying it
+  out at the same time.)
