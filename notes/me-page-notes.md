@@ -571,3 +571,64 @@ Open:
   colours) with a few faint lines, and only three soft waves at a time, each a single long
   line that rolls in over about 14 s, gets lighter and breaks gently. The foam washes up the
   sand slowly; the sea's colour cycle on the approach is slowed to 1.2 steps a second.
+
+## v4: three views, one data file (2026-10-26)
+
+Checkpoint before this: commit `a8cb0fd`, tag `me-v3.5` (local only).
+
+The readable page is v1 (Black Rock Lava) with its Agent view; the v3.5 pixel drive becomes
+the third view, the Arcade. Built in `me/v4/` next to the drafts; `me/index.html` stays the
+draft picker until v4 replaces it.
+
+Decisions (locked):
+- **Three views in the switch:** Human | Agent | Arcade. The Arcade is always in the switch
+  (in Pixelify Sans), so it is easy to get in and out. Without JS the switch has two options.
+- **The easter egg:** a small pixel car parked under the colophon. Hover flashes its
+  headlights; a click revs it (shake, two puffs of smoke), it drives off to the right, the page
+  switches off like an old TV (to a line, then a dot), and comes back on in the Arcade, where
+  the door shuts and the camera swings behind the car. Reduced motion: straight in.
+- **One data file:** `_data/me.yml` holds the content; Jekyll builds the Human page, the Agent
+  terminal and the Arcade boards from it (`me/v4/index.html`, `layout: null`). "Recently
+  written" now comes from the blog's latest posts (`recent_posts: 3`).
+- **Old drafts stay** under `/me/v1/` to `/me/v4/`, unlinked once the final page is live.
+
+How it fits together:
+- `me/v4/style.css`: v1's styles, with its component rules (`.now`, `.limits`, `.strengths`,
+  `.posts`, `.contact`, `.colophon`, `.meta`, `.portrait`) scoped to `.view--human` so they
+  don't leak into the arcade boards; plus the third view, the footer car and the CRT effect.
+- `me/v4/arcade.css`: generated from `me/v3/style.css`, every rule scoped to `.view--arcade`
+  (or to `html.road` while the drive runs); print, base and terminal rules dropped.
+- `me/v4/arcade.js`: v3.5's `road.js`, now switched on and off with the view (it stops its
+  frame loop, gives back scrolling and resets input when the Arcade is left).
+- `me/v4/view.js`: loads `arcade.css` and then `arcade.js` on first use; `#arcade` (or
+  `#arcade-<board>`) opens the Arcade, the back button and Esc leave it.
+- Arcade board ids are prefixed (`arcade-changelog`), so the address bar can follow the drive
+  without clashing with the Human view.
+- Fixed on the way: v1's ember glow made the page wider than a phone (now clipped with
+  `overflow-x: clip` on the Human view); the "view" label hides below 440 px so three options fit.
+
+Local preview (Jekyll is needed now, the Python server only serves v1 to v3):
+- Ruby 3.4 no longer bundles some libraries Jekyll 3 needs, and Bundler resolved an old
+  `github-pages` that breaks on Ruby 3.4. A git-ignored `Gemfile.local` pins `github-pages 232`
+  and adds `csv`, `base64`, `bigdecimal`, `logger`, `webrick`. The tracked `Gemfile` is
+  unchanged (GitHub Pages builds with its own versions).
+- Gems install into `vendor/bundle` (git-ignored, as are `_site/` and the caches; the repo had
+  no `.gitignore` before).
+- Run: `BUNDLE_GEMFILE=Gemfile.local bundle exec jekyll serve --host 127.0.0.1 --port 4001`
+  and open `/me/v4/`.
+
+Checked (Chrome DevTools MCP against the Jekyll server): the Agent terminal and the Human
+page text are identical to v1 except two intended changes (the photo path in the terminal,
+`./` to `../`, and the colophon now mentions the script for the third view); print is one A4
+page with the same text as v1; without JS only Human and Agent show; the footer car drive-off,
+CRT and Arcade opening; switching back gives scrolling back and v1's styles are untouched;
+`#arcade-changelog` deep link, back button and Esc; reduced motion (straight in, still frame,
+boards as a list); light mode (the Arcade stays dark); phone 390 px (no sideways overflow);
+all ten arcade boards fit at 1280x800 as in v3.5.
+- (v4, later) The Human view uses the look of `me-v1` (commit `2b02a5d`), not v1.1: the author
+  preferred it from a screenshot. v1.1's changes are reverted in `me/v4/style.css`: rock
+  grain back to a faint overlay (7%), the name's steady gradient instead of the drifting
+  "molten" one, the slow ember (18 s), the breathing 1 px fissure dividers instead of the
+  flowing hot spot, no heat shimmer on the strengths cards. Also fixed: two one-line
+  `@media` rules (Currently labels, Recently written dates) had missed the `.view--human`
+  scoping and lost their two-column layout.

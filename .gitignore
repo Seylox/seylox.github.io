@@ -1,0 +1,9 @@
+# Local Jekyll build: gems, caches and output stay out of git
+/vendor/
+/.bundle/
+/_site/
+/.jekyll-cache/
+/.jekyll-metadata
+Gemfile.lock
+Gemfile.local
+Gemfile.local.lock

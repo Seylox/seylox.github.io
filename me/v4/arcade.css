@@ -1,0 +1,356 @@
+/* BERND.md v4, the Arcade view: the v3.5 pixel night drive. Loaded by view.js the first
+   time the Arcade is chosen. Every rule is scoped to .view--arcade (or to html.road while
+   the drive runs), so nothing here touches the Human or Agent views. Generated from
+   me/v3/style.css; the colour tokens apply while the Arcade is chosen instead of on :root. */
+@font-face {
+  font-family: "Orbitron";
+  src: url("../fonts/orbitron-latin-wght.woff2") format("woff2");
+  font-weight: 400 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Pixelify Sans";
+  src: url("../fonts/pixelify-sans-latin-wght.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+/* ---------- Tokens ---------- */
+body:has(#view-arcade:checked) {
+  --night: #07050c;
+  --dusk: #1a0b2e;
+  --plum: #4a1240;
+  --text: #f1e9e4;
+  --muted: #b6a8b4;
+  --sun-hot: #ffd27a;
+  --sun: #ff7a1a;
+  --sun-low: #ff2d6f;
+  --grid: #ff3d7f;
+  --line: rgba(255, 122, 26, 0.35);
+  --panel: rgba(9, 6, 16, 0.94);
+
+  --amber: #ffb000;
+  --amber-dim: #b8862b;
+  --amber-faint: #7a5a1e;
+  --term-bg: #0b0906;
+
+  --display: "Orbitron", "Space Grotesk", ui-sans-serif, sans-serif;
+  --sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --pixel: "Pixelify Sans", "Orbitron", ui-sans-serif, sans-serif;
+  --gutter: clamp(16px, 5vw, 56px);
+}
+/* ---------- Base ---------- */
+.view--arcade a { color: var(--sun-hot); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+.view--arcade a:hover { color: var(--sun); }
+.view--arcade :focus-visible { outline: 2px solid var(--sun); outline-offset: 3px; border-radius: 2px; }
+.view--arcade h1, .view--arcade h2, .view--arcade h3, .view--arcade p { margin: 0; }
+.view--arcade ::selection { background: var(--sun-low); color: #fff; }
+/* ---------- View switch (same mechanism as v1) ---------- */
+body:has(#view-arcade:checked) .topbar {
+  position: sticky; top: 0; z-index: 30;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px var(--gutter);
+  background: linear-gradient(rgba(7, 5, 12, 0.85), rgba(7, 5, 12, 0));
+  font-family: var(--mono); font-size: 0.8125rem;
+}
+body:has(#view-arcade:checked) .topbar__file { color: var(--muted); text-decoration: none; white-space: nowrap; }
+body:has(#view-arcade:checked) .topbar__file b { color: var(--text); font-weight: 600; }
+body:has(#view-arcade:checked) .switch {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 3px; border: 1px solid rgba(255, 255, 255, 0.14); border-radius: 999px;
+  background: rgba(7, 5, 12, 0.6);
+}
+body:has(#view-arcade:checked) .switch__hint { color: var(--muted); padding: 0 8px 0 6px; }
+body:has(#view-arcade:checked) .switch__opt {
+  cursor: pointer; padding: 5px 12px; border-radius: 999px;
+  color: var(--muted); transition: background 0.2s, color 0.2s; user-select: none;
+}
+body:has(#view-arcade:checked) .switch__opt:hover { color: var(--text); }
+/* ---------- Road canvas ---------- */
+.view--arcade .road-canvas { display: none; }
+/* Drawn at one canvas pixel per art pixel; road.js sizes it to whole pixels and it scales up crisp. */
+html.road .view--arcade .road-canvas, html.parked .view--arcade .road-canvas {
+  display: block; position: fixed; left: 0; top: 0; z-index: 0; width: 100%; height: 100%;
+  image-rendering: pixelated;
+}
+/* ---------- Signs: shared look ---------- */
+.view--arcade { position: relative; }
+.view--arcade .world { position: relative; z-index: 1; }
+.view--arcade .sign {
+  width: min(760px, calc(100vw - 2 * var(--gutter)));
+  padding: clamp(22px, 4vw, 40px);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.6), 0 0 40px -10px rgba(255, 45, 111, 0.45), inset 0 1px 0 rgba(255, 210, 122, 0.15);
+}
+.view--arcade .sign > * + * { margin-top: 14px; }
+.view--arcade .kicker, .view--arcade .meta, .view--arcade .small, .view--arcade .hint { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); }
+.view--arcade .kicker { color: var(--sun); }
+.view--arcade .lead { font-size: clamp(1.2rem, 2.6vw, 1.6rem); line-height: 1.3; letter-spacing: -0.015em; }
+.view--arcade .chrome {
+  font-family: var(--display); font-weight: 900; text-transform: uppercase;
+  font-size: clamp(2.2rem, 8vw, 5.2rem); line-height: 0.95; letter-spacing: 0.02em;
+  font-style: oblique 10deg;
+  background: linear-gradient(180deg, #fff 0%, #ffe9c7 38%, var(--sun) 50%, var(--sun-low) 78%, #b31d6a 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 18px rgba(255, 45, 111, 0.45));
+  padding-bottom: 0.06em;
+}
+.view--arcade .chrome--small { font-size: clamp(1.6rem, 5vw, 3rem); }
+.view--arcade .plate {
+  font-family: var(--display); font-weight: 800; text-transform: uppercase;
+  font-size: clamp(1.25rem, 3.4vw, 2rem); letter-spacing: 0.06em;
+  color: var(--sun-hot);
+  text-shadow: 0 0 14px rgba(255, 122, 26, 0.6);
+}
+.view--arcade .hero__row { display: flex; gap: 18px; align-items: center; }
+.view--arcade .portrait {
+  width: 88px; height: 88px; flex: none; object-fit: cover; border-radius: 6px;
+  filter: saturate(0.8) contrast(1.05);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 20px -4px rgba(255, 45, 111, 0.6);
+}
+.view--arcade .hint { color: var(--sun-hot); letter-spacing: 0.08em; text-transform: uppercase; }
+/* Currently */
+.view--arcade .now { margin: 0; }
+.view--arcade .now > div { display: grid; grid-template-columns: 1fr; gap: 2px 20px; padding: 10px 0; border-bottom: 1px dashed rgba(255, 255, 255, 0.12); }
+@media (min-width: 640px) {
+  .view--arcade .now > div { grid-template-columns: 6.5rem 1fr; }
+}
+.view--arcade .now dt { font-family: var(--mono); font-size: 0.8125rem; color: var(--sun); padding-top: 0.2em; }
+.view--arcade .now dd { margin: 0; }
+/* Limitations as warning signs */
+.view--arcade .sign--warn { border-color: rgba(255, 210, 122, 0.5); }
+.view--arcade .sign--warn::before {
+  content: "LIMITATIONS " attr(data-step);
+  display: block; margin: calc(-1 * clamp(22px, 4vw, 40px)) calc(-1 * clamp(22px, 4vw, 40px)) 20px;
+  padding: 8px clamp(22px, 4vw, 40px);
+  font: 800 0.75rem/1 var(--display); letter-spacing: 0.14em; color: #120a04;
+  background: repeating-linear-gradient(-45deg, var(--sun-hot) 0 14px, var(--sun) 14px 28px);
+  border-radius: 7px 7px 0 0;
+}
+.view--arcade .intro { color: var(--muted); }
+.view--arcade .limits { list-style: none; margin: 0; padding: 0; }
+.view--arcade .limits li { padding: 12px 0; border-top: 1px dashed rgba(255, 255, 255, 0.12); }
+.view--arcade .limits li:first-child { border-top: 0; padding-top: 4px; }
+.view--arcade .limits li > * + * { margin-top: 6px; }
+.view--arcade .limits h3 { font-size: clamp(1.1rem, 2.4vw, 1.35rem); line-height: 1.2; letter-spacing: -0.015em; }
+.view--arcade .limits p:not(.whose) { font-size: 0.9375rem; line-height: 1.5; }
+.view--arcade .label {
+  font: 600 0.6875rem/1 var(--mono); text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--sun); margin-right: 8px;
+}
+.view--arcade .whose {
+  display: inline-block; font: 500 0.75rem/1 var(--mono);
+  padding: 5px 9px; border-radius: 999px; border: 1px solid currentColor;
+}
+.view--arcade .whose--mine { color: var(--sun-hot); }
+.view--arcade .whose--ai { color: #7ad7ff; }
+.view--arcade .whose--both { color: var(--sun-low); }
+/* Strengths */
+.view--arcade .sign--wide { width: min(980px, calc(100vw - 2 * var(--gutter))); }
+.view--arcade .strengths { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.view--arcade .strengths li { padding: 16px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; background: rgba(255, 45, 111, 0.05); }
+.view--arcade .strengths h3 { font-size: 1.05rem; margin-bottom: 6px; color: var(--sun-hot); }
+.view--arcade .strengths p { font-size: 0.9375rem; color: var(--muted); line-height: 1.5; }
+/* Changelog: a few releases per board, the year range as the mile marker */
+.view--arcade .sign--log { position: relative; }
+.view--arcade .sign--log::after {
+  content: attr(data-year);
+  position: absolute; right: clamp(16px, 3vw, 32px); top: clamp(16px, 2.8vw, 30px);
+  font: 900 clamp(1.1rem, 2.6vw, 1.5rem)/1 var(--display); font-style: oblique 10deg;
+  color: transparent; -webkit-text-stroke: 1px var(--sun);
+  text-shadow: 0 0 14px rgba(255, 122, 26, 0.5);
+}
+.view--arcade .log { list-style: none; margin: 0; padding: 0; }
+.view--arcade .log li { padding: 10px 0 10px 14px; border-left: 2px solid rgba(255, 255, 255, 0.12); }
+.view--arcade .log li > * + * { margin-top: 4px; }
+.view--arcade .log h3 { font-size: clamp(1.05rem, 2.2vw, 1.2rem); line-height: 1.25; letter-spacing: -0.01em; }
+.view--arcade .log li p:not(.ver) { font-size: 0.9375rem; line-height: 1.5; color: var(--muted); }
+.view--arcade .ver { font-family: var(--mono); font-size: 0.8125rem; color: var(--text); }
+.view--arcade .ver span { margin-left: 10px; font-size: 0.6875rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.view--arcade .log .rel--major { border-left-color: var(--sun-hot); }
+.view--arcade .log .rel--minor { border-left-color: var(--sun); }
+.view--arcade .rel--major .ver span { color: var(--sun-hot); }
+.view--arcade .rel--minor .ver span { color: var(--sun); }
+.view--arcade .rel--patch .ver span, .view--arcade .rel--init .ver span { color: var(--muted); }
+/* Writing */
+.view--arcade .posts { list-style: none; margin: 14px 0 0; padding: 0; }
+.view--arcade .posts a { display: grid; gap: 2px 20px; padding: 12px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); color: var(--text); text-decoration: none; }
+@media (min-width: 640px) {
+  .view--arcade .posts a { grid-template-columns: 6.5rem 1fr; }
+}
+.view--arcade .posts a:hover span { color: var(--sun-hot); }
+.view--arcade .posts time { font-family: var(--mono); font-size: 0.8125rem; color: var(--muted); padding-top: 0.2em; }
+.view--arcade .posts span { font-weight: 500; }
+/* Arrival */
+.view--arcade .sign--arrival { text-align: center; }
+.view--arcade .contact { list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px; }
+.view--arcade .contact a { font: 700 clamp(1.05rem, 2.6vw, 1.35rem)/1.2 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.view--arcade .contact li:last-child a { text-transform: none; font-family: var(--mono); font-weight: 500; }
+.view--arcade .colophon { font-family: var(--mono); font-size: 0.75rem; line-height: 1.7; color: var(--muted); max-width: 56ch; margin-inline: auto; }
+/* HUD is only useful while driving */
+.view--arcade .hud { display: none; }
+/* ---------- Flat document (no JS / reduced motion) ---------- */
+html:not(.road) .view--arcade .world {
+  display: flex; flex-direction: column; align-items: center; gap: 28px;
+  padding: 12vh 0 80px;
+}
+html:not(.road) .view--arcade .hint { display: none; }
+/* ---------- Road mode (road.js adds .road to <html>). Screen only: print stays a plain CV. ---------- */
+@media screen {
+  /* Nothing scrolls: scroll, swipe and keys drive from one sign to the next. */
+  html.road:has(#view-arcade:checked), html.road:has(#view-arcade:checked) body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+  html.road .view--arcade { position: static; }
+  html.road .view--arcade .world { position: fixed; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+  /* Billboards: road.js positions and scales each one every frame (transform-origin top left). */
+  html.road .view--arcade .sign {
+    position: absolute; left: 0; top: 0; margin: 0;
+    width: min(520px, calc(100vw - 2 * var(--gutter)));
+    transform-origin: 0 0;
+    visibility: hidden; pointer-events: auto;
+  }
+  html.road .view--arcade .sign--hero, html.road .view--arcade .sign--wide, html.road .view--arcade .sign--log { width: min(620px, calc(100vw - 2 * var(--gutter))); }
+  html.road .view--arcade .strengths { grid-template-columns: 1fr 1fr; }
+  /* Short, wide screens: road.js may set long lists in two columns to keep a board readable. */
+  html.road .view--arcade .sign--cols .limits, html.road .view--arcade .sign--cols .log { column-count: 2; column-gap: 32px; }
+  html.road .view--arcade .sign--cols .limits li, html.road .view--arcade .sign--cols .log li { break-inside: avoid; }
+  html.road .view--arcade .sign--cols .limits li:nth-child(2) { border-top: 0; padding-top: 4px; }
+  html.road .view--arcade .sign--cols .strengths { grid-template-columns: repeat(4, 1fr); }
+  html.road .view--arcade .sign--hero .chrome { font-size: clamp(2.2rem, 9vw, 3.6rem); }
+  html.road .view--arcade .sign { background: none; }
+  /* Posts: two legs from the board down to the road. Height in board pixels, set by road.js. */
+  .view--arcade .post { display: none; }
+  html.road .view--arcade .post {
+    display: block; position: absolute; left: 16%; right: 16%; top: 100%; height: var(--post, 0px);
+    border-inline: 12px solid #1d1128; pointer-events: none;
+  }
+  html.road .view--arcade .post::before, html.road .view--arcade .post::after { content: ""; position: absolute; top: 0; bottom: 0; width: 2px; background: rgba(255, 61, 127, 0.55); }
+  html.road .view--arcade .sign--afloat .post { display: none; }
+  html.road .view--arcade .post::before { left: -2px; }
+  html.road .view--arcade .post::after { right: -12px; }
+  /* Three fixed columns, so the Exits button stays put whatever the section name is. */
+  html.road .view--arcade .hud {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: end; gap: 10px 12px;
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    padding: 14px var(--gutter) max(14px, env(safe-area-inset-bottom));
+    font-family: var(--display); text-transform: uppercase;
+    background: linear-gradient(rgba(7, 5, 12, 0), rgba(7, 5, 12, 0.85));
+  }
+}
+.view--arcade .hud__map {
+  grid-column: 1 / -1; position: relative; height: 3px; border-radius: 2px; opacity: 0.75;
+  background: rgba(255, 255, 255, 0.15);
+}
+.view--arcade .hud__tick { position: absolute; top: -2px; width: 1px; height: 7px; background: rgba(255, 255, 255, 0.45); }
+.view--arcade .hud__dot {
+  position: absolute; top: 50%; left: 0; width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%;
+  background: #fff3d6; box-shadow: 0 0 10px 2px rgba(255, 180, 84, 0.8);
+}
+.view--arcade .hud__odo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.view--arcade .hud__exit { font-size: 0.6875rem; letter-spacing: 0.18em; color: var(--sun); }
+.view--arcade .hud__name { font-size: clamp(0.85rem, 2vw, 1rem); font-weight: 700; letter-spacing: 0.06em; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view--arcade .hud__speed { display: flex; align-items: baseline; justify-content: flex-end; gap: 6px; }
+.view--arcade .hud__kmh {
+  font: 700 clamp(1.6rem, 4vw, 2.4rem)/1 var(--mono); font-variant-numeric: tabular-nums;
+  color: var(--sun-hot); text-shadow: 0 0 14px rgba(255, 122, 26, 0.7);
+  min-width: 2.2ch; text-align: right;
+}
+.view--arcade .hud__unit { font-size: 0.6875rem; letter-spacing: 0.14em; color: var(--muted); }
+.view--arcade .hud__nav { display: flex; align-items: center; gap: 8px; }
+.view--arcade .hud__exits { position: relative; font-family: var(--mono); text-transform: none; }
+.view--arcade .hud__step {
+  width: 34px; height: 34px; padding: 0; cursor: pointer;
+  font: 500 1.25rem/1 var(--mono); color: var(--text);
+  border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px; background: rgba(7, 5, 12, 0.6);
+}
+.view--arcade .hud__step:hover { border-color: var(--sun); color: var(--sun-hot); }
+.view--arcade .hud__step:disabled { opacity: 0.3; cursor: default; border-color: rgba(255, 255, 255, 0.18); color: var(--text); }
+.view--arcade .hud__exits summary {
+  list-style: none; cursor: pointer; font-size: 0.8125rem; color: var(--text);
+  padding: 7px 14px; border: 1px solid rgba(255, 255, 255, 0.18); border-radius: 999px; background: rgba(7, 5, 12, 0.6);
+}
+.view--arcade .hud__exits summary::-webkit-details-marker { display: none; }
+.view--arcade .hud__exits[open] summary { border-color: var(--sun); color: var(--sun-hot); }
+.view--arcade .hud__list {
+  position: absolute; bottom: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+  margin: 0; padding: 8px; list-style: none; min-width: 220px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 8px;
+}
+.view--arcade .hud__list button {
+  display: flex; gap: 12px; width: 100%; padding: 8px 10px; border: 0; border-radius: 4px;
+  background: none; color: var(--text); font: 500 0.875rem/1.2 var(--mono); text-align: left; cursor: pointer;
+}
+.view--arcade .hud__list button span { color: var(--sun); }
+.view--arcade .hud__list button:hover, .view--arcade .hud__list button:focus-visible { background: rgba(255, 122, 26, 0.14); }
+@media (max-width: 700px) {
+  .view--arcade .sign { padding: 20px; }
+  .view--arcade .lead { font-size: 1.15rem; }
+  .view--arcade .strengths { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .view--arcade .strengths li { padding: 10px; }
+  .view--arcade .strengths p { display: none; }
+  .view--arcade .hud__exit { font-size: 0.625rem; }
+}
+@media (max-width: 480px) {
+  /* Phones swipe; the step buttons would only squeeze the section name. */
+  .view--arcade .hud__step, .view--arcade .hud__unit { display: none; }
+  /* Small screens: tighter boards, so the long ones still show at a readable size. */
+  .view--arcade .sign { padding: 16px; }
+  .view--arcade .sign > * + * { margin-top: 10px; }
+  .view--arcade .sign--warn::before { margin: -16px -16px 14px; padding: 7px 16px; }
+  .view--arcade .lead { font-size: 1.05rem; }
+  .view--arcade .plate { font-size: 1.15rem; }
+  .view--arcade .limits li { padding: 8px 0; }
+  .view--arcade .limits h3, .view--arcade .log h3 { font-size: 1rem; }
+  .view--arcade .limits p:not(.whose), .view--arcade .log li p:not(.ver), .view--arcade .now dd, .view--arcade .intro { font-size: 0.875rem; line-height: 1.45; }
+  .view--arcade .log li { padding: 6px 0 6px 10px; }
+}
+@media (max-height: 520px) {
+  /* Short screens (phones on their side): slimmer bars, more room for the boards. */
+  html.road .view--arcade .hud { padding-block: 6px max(6px, env(safe-area-inset-bottom)); row-gap: 6px; }
+  .view--arcade .hud__kmh { font-size: 1.4rem; }
+  .view--arcade .hud__step { width: 28px; height: 28px; font-size: 1rem; }
+  .view--arcade .hud__exits summary { padding: 4px 12px; }
+}
+/* ---------- Pixel look (screen only; print stays the plain CV) ----------
+   Boards get a 9-slice pixel frame with stepped corners, headings and the HUD a pixel font,
+   shadows are hard. Body text stays a normal font for reading. */
+@media screen {
+  .view--arcade .sign {
+    border: 9px solid transparent; border-radius: 0; box-shadow: none; background: none;
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' shape-rendering='crispEdges'><rect x='2' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='3' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='4' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='5' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='6' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='1' width='1' height='1' fill='%23ff3d7f'/><rect x='2' y='1' width='1' height='1' fill='%234a1238'/><rect x='3' y='1' width='1' height='1' fill='%234a1238'/><rect x='4' y='1' width='1' height='1' fill='%234a1238'/><rect x='5' y='1' width='1' height='1' fill='%234a1238'/><rect x='6' y='1' width='1' height='1' fill='%234a1238'/><rect x='7' y='1' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='2' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='2' width='1' height='1' fill='%234a1238'/><rect x='2' y='2' width='1' height='1' fill='%230b0713'/><rect x='3' y='2' width='1' height='1' fill='%230b0713'/><rect x='4' y='2' width='1' height='1' fill='%230b0713'/><rect x='5' y='2' width='1' height='1' fill='%230b0713'/><rect x='6' y='2' width='1' height='1' fill='%230b0713'/><rect x='7' y='2' width='1' height='1' fill='%234a1238'/><rect x='8' y='2' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='3' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='3' width='1' height='1' fill='%234a1238'/><rect x='2' y='3' width='1' height='1' fill='%230b0713'/><rect x='3' y='3' width='1' height='1' fill='%230b0713'/><rect x='4' y='3' width='1' height='1' fill='%230b0713'/><rect x='5' y='3' width='1' height='1' fill='%230b0713'/><rect x='6' y='3' width='1' height='1' fill='%230b0713'/><rect x='7' y='3' width='1' height='1' fill='%234a1238'/><rect x='8' y='3' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='4' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='4' width='1' height='1' fill='%234a1238'/><rect x='2' y='4' width='1' height='1' fill='%230b0713'/><rect x='3' y='4' width='1' height='1' fill='%230b0713'/><rect x='4' y='4' width='1' height='1' fill='%230b0713'/><rect x='5' y='4' width='1' height='1' fill='%230b0713'/><rect x='6' y='4' width='1' height='1' fill='%230b0713'/><rect x='7' y='4' width='1' height='1' fill='%234a1238'/><rect x='8' y='4' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='5' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='5' width='1' height='1' fill='%234a1238'/><rect x='2' y='5' width='1' height='1' fill='%230b0713'/><rect x='3' y='5' width='1' height='1' fill='%230b0713'/><rect x='4' y='5' width='1' height='1' fill='%230b0713'/><rect x='5' y='5' width='1' height='1' fill='%230b0713'/><rect x='6' y='5' width='1' height='1' fill='%230b0713'/><rect x='7' y='5' width='1' height='1' fill='%234a1238'/><rect x='8' y='5' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='6' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='6' width='1' height='1' fill='%234a1238'/><rect x='2' y='6' width='1' height='1' fill='%230b0713'/><rect x='3' y='6' width='1' height='1' fill='%230b0713'/><rect x='4' y='6' width='1' height='1' fill='%230b0713'/><rect x='5' y='6' width='1' height='1' fill='%230b0713'/><rect x='6' y='6' width='1' height='1' fill='%230b0713'/><rect x='7' y='6' width='1' height='1' fill='%234a1238'/><rect x='8' y='6' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='7' width='1' height='1' fill='%23ff3d7f'/><rect x='2' y='7' width='1' height='1' fill='%234a1238'/><rect x='3' y='7' width='1' height='1' fill='%234a1238'/><rect x='4' y='7' width='1' height='1' fill='%234a1238'/><rect x='5' y='7' width='1' height='1' fill='%234a1238'/><rect x='6' y='7' width='1' height='1' fill='%234a1238'/><rect x='7' y='7' width='1' height='1' fill='%23ff3d7f'/><rect x='2' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='3' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='4' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='5' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='6' y='8' width='1' height='1' fill='%23ff3d7f'/></svg>") 3 fill / 9px / 0 stretch;
+  }
+  .view--arcade .sign--warn { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' shape-rendering='crispEdges'><rect x='2' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='3' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='4' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='5' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='6' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='1' width='1' height='1' fill='%23ffd27a'/><rect x='2' y='1' width='1' height='1' fill='%234a3410'/><rect x='3' y='1' width='1' height='1' fill='%234a3410'/><rect x='4' y='1' width='1' height='1' fill='%234a3410'/><rect x='5' y='1' width='1' height='1' fill='%234a3410'/><rect x='6' y='1' width='1' height='1' fill='%234a3410'/><rect x='7' y='1' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='2' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='2' width='1' height='1' fill='%234a3410'/><rect x='2' y='2' width='1' height='1' fill='%230b0713'/><rect x='3' y='2' width='1' height='1' fill='%230b0713'/><rect x='4' y='2' width='1' height='1' fill='%230b0713'/><rect x='5' y='2' width='1' height='1' fill='%230b0713'/><rect x='6' y='2' width='1' height='1' fill='%230b0713'/><rect x='7' y='2' width='1' height='1' fill='%234a3410'/><rect x='8' y='2' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='3' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='3' width='1' height='1' fill='%234a3410'/><rect x='2' y='3' width='1' height='1' fill='%230b0713'/><rect x='3' y='3' width='1' height='1' fill='%230b0713'/><rect x='4' y='3' width='1' height='1' fill='%230b0713'/><rect x='5' y='3' width='1' height='1' fill='%230b0713'/><rect x='6' y='3' width='1' height='1' fill='%230b0713'/><rect x='7' y='3' width='1' height='1' fill='%234a3410'/><rect x='8' y='3' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='4' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='4' width='1' height='1' fill='%234a3410'/><rect x='2' y='4' width='1' height='1' fill='%230b0713'/><rect x='3' y='4' width='1' height='1' fill='%230b0713'/><rect x='4' y='4' width='1' height='1' fill='%230b0713'/><rect x='5' y='4' width='1' height='1' fill='%230b0713'/><rect x='6' y='4' width='1' height='1' fill='%230b0713'/><rect x='7' y='4' width='1' height='1' fill='%234a3410'/><rect x='8' y='4' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='5' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='5' width='1' height='1' fill='%234a3410'/><rect x='2' y='5' width='1' height='1' fill='%230b0713'/><rect x='3' y='5' width='1' height='1' fill='%230b0713'/><rect x='4' y='5' width='1' height='1' fill='%230b0713'/><rect x='5' y='5' width='1' height='1' fill='%230b0713'/><rect x='6' y='5' width='1' height='1' fill='%230b0713'/><rect x='7' y='5' width='1' height='1' fill='%234a3410'/><rect x='8' y='5' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='6' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='6' width='1' height='1' fill='%234a3410'/><rect x='2' y='6' width='1' height='1' fill='%230b0713'/><rect x='3' y='6' width='1' height='1' fill='%230b0713'/><rect x='4' y='6' width='1' height='1' fill='%230b0713'/><rect x='5' y='6' width='1' height='1' fill='%230b0713'/><rect x='6' y='6' width='1' height='1' fill='%230b0713'/><rect x='7' y='6' width='1' height='1' fill='%234a3410'/><rect x='8' y='6' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='7' width='1' height='1' fill='%23ffd27a'/><rect x='2' y='7' width='1' height='1' fill='%234a3410'/><rect x='3' y='7' width='1' height='1' fill='%234a3410'/><rect x='4' y='7' width='1' height='1' fill='%234a3410'/><rect x='5' y='7' width='1' height='1' fill='%234a3410'/><rect x='6' y='7' width='1' height='1' fill='%234a3410'/><rect x='7' y='7' width='1' height='1' fill='%23ffd27a'/><rect x='2' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='3' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='4' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='5' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='6' y='8' width='1' height='1' fill='%23ffd27a'/></svg>"); }
+  .view--arcade .sign--warn::before { border-radius: 0; }
+  .view--arcade .chrome {
+    font-family: var(--pixel); font-weight: 700; font-style: normal; letter-spacing: 0.04em; line-height: 0.9;
+    background: linear-gradient(180deg, #fff 0 32%, #ffe9c7 32% 46%, var(--sun) 46% 62%, var(--sun-low) 62% 82%, #b31d6a 82%);
+    -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(4px 4px 0 #3a0d24);
+  }
+  .view--arcade .plate { font-family: var(--pixel); font-weight: 700; letter-spacing: 0.05em; text-shadow: 3px 3px 0 #3a0d24; }
+  .view--arcade .limits h3, .view--arcade .log h3, .view--arcade .strengths h3, .view--arcade .contact a:not([href^="mailto"]) { font-family: var(--pixel); font-weight: 600; letter-spacing: 0.01em; }
+  .view--arcade .sign--warn::before, .view--arcade .sign--log::after { font-family: var(--pixel); font-style: normal; letter-spacing: 0.08em; }
+  .view--arcade .sign--log::after { -webkit-text-stroke: 0; color: var(--sun); text-shadow: 2px 2px 0 #3a0d24; }
+  .view--arcade .strengths li, .view--arcade .posts a, .view--arcade .whose, .view--arcade .portrait { border-radius: 0; }
+  .view--arcade .portrait { box-shadow: 4px 4px 0 #3a0d24; }
+  .view--arcade .hud__exit, .view--arcade .hud__name, .view--arcade .hud__kmh, .view--arcade .hud__unit, .view--arcade .hud__exits summary, .view--arcade .hud__list button, body:has(#view-arcade:checked) .switch__opt, .view--arcade .hud__step { font-family: var(--pixel); }
+  .view--arcade .hud__kmh { text-shadow: 3px 3px 0 #3a0d24; }
+  body:has(#view-arcade:checked) .switch, body:has(#view-arcade:checked) .switch__opt, .view--arcade .hud__exits summary, .view--arcade .hud__step, .view--arcade .hud__list, .view--arcade .hud__list button, .view--arcade .hud__map, .view--arcade .hud__dot { border-radius: 0; }
+  .view--arcade .hud__exits summary, .view--arcade .hud__step, body:has(#view-arcade:checked) .switch { box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6); }
+  .view--arcade .hud__dot { box-shadow: 0 0 0 2px #3a0d24; }
+  /* Scanlines: one dark line per art pixel row, over the road only (the boards sit above). */
+  .view--arcade .scanlines { display: none; }
+  html.road .view--arcade .scanlines {
+    display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(to bottom, transparent 0 calc(var(--pix, 4px) - 1px), rgba(0, 0, 0, 0.18) calc(var(--pix, 4px) - 1px) var(--pix, 4px));
+  }
+}
+/* ---------- Agent view: amber phosphor (as v1) ---------- */
+/* ---------- Print: plain light CV ---------- */
+
+/* The arcade's base type, on its own container instead of body. */
+.view--arcade { font: 400 1.0625rem/1.6 var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+/* The top bar stays pinned over the road (it is sticky in the other views). */
+body:has(#view-arcade:checked) .topbar { position: fixed; left: 0; right: 0; }
