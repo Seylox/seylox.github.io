@@ -41,7 +41,8 @@ Sections in Human view:
 3. Known limitations (and workarounds): the self-deprecating centerpiece. The limitation
    carries the joke, the workaround carries the competence.
 4. What I'm actually good at: 3 to 4 solid points, no jokes.
-5. Changelog: career as release notes, newest first, with "In Which..." titles.
+5. Changelog: career as release notes, newest first. Titles read like real release notes
+   ("Added:", "Changed:", "Fixed:"); "In Which..." titles are reserved for blog posts.
 6. Recently written: latest blog posts (Liquid in the Jekyll version).
 7. Colophon: "Agent-written, human-edited." Plus the stack.
 
@@ -590,6 +591,8 @@ Decisions (locked):
 - **One data file:** `_data/me.yml` holds the content; Jekyll builds the Human page, the Agent
   terminal and the Arcade boards from it (`me/v4/index.html`, `layout: null`). "Recently
   written" now comes from the blog's latest posts (`recent_posts: 3`).
+  Section headings (`sections`, with Arcade `exit` and terminal `agent` variants) and the
+  small fixed labels (`labels`) live there too, so no text is written into the template.
 - **Old drafts stay** under `/me/v1/` to `/me/v4/`, unlinked once the final page is live.
 
 How it fits together:
@@ -632,3 +635,14 @@ all ten arcade boards fit at 1280x800 as in v3.5.
   flowing hot spot, no heat shimmer on the strengths cards. Also fixed: two one-line
   `@media` rules (Currently labels, Recently written dates) had missed the `.view--human`
   scoping and lost their two-column layout.
+
+### Release-note titles and headings in the data file (2026-10-26)
+
+- Changelog titles rewritten from "In Which..." (that style belongs to blog posts) to
+  release-note style: "Added: a blog, to remember what broke", "Changed: employer to
+  Anyline, scope to mobile SDKs", "Fixed: zero hackathon wins (Droidcon UK 2013)", and so on.
+  One `title` field per release; Human view and Arcade both use it, the terminal keeps its
+  own `agent` lines.
+- Section headings, Arcade exit names, the terminal headings and the small labels moved from
+  `me/v4/index.html` into `_data/me.yml`. The generated page is byte-identical apart from the
+  new titles.

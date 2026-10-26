@@ -1,6 +1,7 @@
 # Content for the /me/ page. The Human view, the Agent terminal and the Arcade boards are all
 # built from this file by Jekyll (me/v4/index.html). Edit here, not in the page.
 # Text fields may contain HTML. "agent" fields are the plain-text lines for the terminal.
+# Changelog titles read like release notes: "Added:", "Changed:", "Fixed:", then what.
 
 updated: "2026-10"
 blog: "https://blog.rubbad.uk"
@@ -13,6 +14,39 @@ location: "Graz, Austria"
 coords: "47.0707° N, 15.4395° E"
 coords_plain: "47.0707 N, 15.4395 E"
 photo_alt: "Portrait of Bernd Kampl, smiling, on a boat."
+
+# Section headings for all three views. "exit" is the name on the Arcade's map and "agent" the
+# heading in the terminal; both fall back to "title".
+sections:
+  currently:
+    title: "Currently"
+  limitations:
+    title: "Known limitations"
+    sub: "(and workarounds)"
+  strengths:
+    title: "What I'm actually good at"
+    exit: "What I'm good at"
+    agent: "Strengths"
+  changelog:
+    title: "Changelog"
+  writing:
+    title: "Recently written"
+    agent: "Recent writing"
+
+# The small fixed words around the content.
+labels:
+  updated: "updated"
+  limitation: "Limitation"
+  whose: "Whose"
+  workaround: "Workaround"
+  read_more: "Read more"
+  all_posts: "All posts on the blog"
+  arcade_start: "Start"
+  arcade_hint: "Scroll or swipe to drive. Let go and it parks."
+  arcade_mine_first: "Mine first."
+  arcade_theirs: "Now the AI's."
+  arcade_arrival: "Arrival"
+  arcade_arrived: "You have arrived."
 
 currently:
   - label: "Work"
@@ -116,67 +150,67 @@ changelog:
     - ver: "v2026.03"
       kind: minor
       era: 0
-      title: "In Which I Start Writing Things Down in Public"
+      title: "Added: a blog, to remember what broke"
       html: 'Started <a href="https://blog.rubbad.uk">the blog</a>. AI agents, software engineering, and what broke along the way.'
       agent: "Started the blog."
     - ver: "v2022.01"
       kind: major
       era: 0
-      title: "In Which I Join a Computer-Vision Company"
+      title: "Changed: employer to Anyline, scope to mobile SDKs"
       html: "Team lead at Anyline, maker of on-device OCR and scanning SDKs. I lead the team behind the mobile SDKs across Android, iOS and the cross-platform wrappers, look after releases, CI and docs, and these days spend a fair amount of time teaching agents our conventions."
       agent: "Team lead at Anyline. Mobile SDKs, releases, CI, docs, agents."
     - ver: "v2020"
       kind: patch
       era: 0
-      title: "In Which the House Gets Opinions"
+      title: "Added: Z-Wave support for the house"
       html: "Smart home with Home Assistant and Z-Wave."
       agent: "Smart home: Home Assistant, Z-Wave."
     - ver: "v2018"
       kind: patch
       era: 0
-      title: "In Which a Wedding Gets a Photo Box"
+      title: "Added: instant-print photo box (wedding build)"
       html: "An instant-print selfie box for my own wedding: a Sony Alpha 5000, a Google Pixel C running a self-written Android app, a Raspberry Pi, and a Canon Selphy printer."
       agent: "Wedding photo box: camera, tablet, Raspberry Pi, printer."
     - ver: "v2016.04"
       kind: major
       era: 1
-      title: "In Which a Company Grows from Two People to Forty"
+      title: "Changed: employer to iTranslate, headcount 2&nbsp;→&nbsp;40+"
       html: "Lead Android developer at iTranslate. Joined as the second employee, which meant doing a bit of everything, from customer support to network administration. Built and grew the Android versions of iTranslate and Typeright, and led the Android team as the company grew past forty people."
       agent: "Lead Android developer at iTranslate. Employee #2, company grew past 40."
     - ver: "v2014"
       kind: minor
       era: 1
-      title: "In Which an App Finds 100,000 People"
+      title: "Added: side project, 100,000 downloads"
       html: "<em>Where the hell are you?</em>, a side-project Android app, from concept to 100,000 downloads between 2014 and 2018."
       agent: "\"Where the hell are you?\" Android app, 100,000 downloads."
     - ver: "v2014.04"
       kind: major
       era: 1
-      title: "In Which Seven out of Seven Projects Ship"
+      title: "Changed: role to project lead, 7/7 projects shipped"
       html: "Project lead and full-stack engineer at CodeFlügel, a studio for augmented reality and mobile apps. Native Android apps, Node backends, design-tool plugins, and a Kinect app for Windows 10."
       agent: "Project lead, full-stack at CodeFlügel (AR and mobile apps)."
     - ver: "v2013.x"
       kind: minor
       era: 2
-      title: "In Which I Win a Hackathon at Droidcon UK"
+      title: "Fixed: zero hackathon wins (Droidcon UK 2013)"
       html: "First place for an Android app at the Droidcon UK 2013 hackathon."
       agent: "First place, Droidcon UK 2013 hackathon."
     - ver: "v2013"
       kind: major
       era: 2
-      title: "In Which I Measure How Hungry Servers Are"
+      title: "Added: MSc Telematics, with honors"
       html: "MSc in Telematics at TU Graz, with honors. Master's thesis on modelling server energy consumption, written in Dublin."
       agent: "MSc Telematics, TU Graz, with honors. Thesis in Dublin."
     - ver: "v2012"
       kind: patch
       era: 2
-      title: "In Which Android Meets Augmented Reality"
+      title: "Added: augmented reality support (TU Graz)"
       html: "An augmented reality Android app for the Aerial Vision Group at TU Graz. Also: Google I/O."
       agent: "AR Android app, Aerial Vision Group, TU Graz. Google I/O."
     - ver: "v2006"
       kind: init
       era: 2
-      title: "Initial Release"
+      title: "Initial release: BSc Telematics, TU Graz"
       html: "BSc in Telematics (computer science and electrical engineering) at TU Graz. Bachelor's thesis on 3D features for action recognition, plus an exchange term at Kennesaw State University, Georgia."
       agent: "BSc Telematics, TU Graz. Exchange term in Georgia, US."
 
@@ -198,6 +232,12 @@ colophon: "Agent-written, human-edited, like everything else here. Plain HTML an
 arcade_colophon: "Agent-written, human-edited, like everything else here. Plain HTML, CSS and one not-so-small script: no framework, no tracking, no cookies. Set in Pixelify Sans, Space Grotesk and JetBrains Mono, all self-hosted. No sound, you're welcome."
 
 agent:
+  # Terminal-only headings; the shared ones come from "sections".
+  headings:
+    identity: "Identity"
+    focus: "Current focus"
+    conventions: "Conventions"
+    contact: "Contact"
   intro: "Read this first. Everything below was true at the time of writing."
   photo: "- Photo: ../photo.jpg (smiling, slightly wet, on a boat.\n  Not representative of a typical workday.)"
   role: "- Role: Engineering lead. Leads the Platform team at Anyline\n  (on-device OCR and scanning SDKs)."

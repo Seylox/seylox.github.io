@@ -3,6 +3,7 @@ layout: null
 sitemap: false
 ---
 {%- assign d = site.data.me -%}
+{%- assign s = d.sections -%}
 <!doctype html>
 <html lang="en">
 <head>
@@ -53,7 +54,7 @@ sitemap: false
         <h1 class="hero__name">{{ d.name }}</h1>
         <p class="hero__lead">{{ d.lead }}</p>
         <p class="hero__sub">{{ d.sub }}</p>
-        <p class="meta">{{ d.location }} <span aria-hidden="true">·</span> {{ d.coords }} <span aria-hidden="true">·</span> updated {{ d.updated }}</p>
+        <p class="meta">{{ d.location }} <span aria-hidden="true">·</span> {{ d.coords }} <span aria-hidden="true">·</span> {{ d.labels.updated }} {{ d.updated }}</p>
       </div>
       <figure class="portrait">
         <img src="../photo.jpg" width="600" height="600" alt="{{ d.photo_alt }}">
@@ -62,7 +63,7 @@ sitemap: false
     </section>
 
     <section class="block reveal" aria-labelledby="h-currently">
-      <h2 id="h-currently"><span class="md" aria-hidden="true">## </span>Currently</h2>
+      <h2 id="h-currently"><span class="md" aria-hidden="true">## </span>{{ s.currently.title }}</h2>
       <dl class="now">
         {%- for item in d.currently %}
         <div><dt>{{ item.label }}</dt><dd>{{ item.html }}</dd></div>
@@ -71,18 +72,18 @@ sitemap: false
     </section>
 
     <section class="block reveal" aria-labelledby="h-limits">
-      <h2 id="h-limits"><span class="md" aria-hidden="true">## </span>Known limitations <span class="h2-sub">(and workarounds)</span></h2>
+      <h2 id="h-limits"><span class="md" aria-hidden="true">## </span>{{ s.limitations.title }} <span class="h2-sub">{{ s.limitations.sub }}</span></h2>
       <p class="block__intro">{{ d.limitations.intro }}</p>
       <table class="limits">
         <thead>
-          <tr><th scope="col">Limitation</th><th scope="col">Whose</th><th scope="col">Workaround</th></tr>
+          <tr><th scope="col">{{ d.labels.limitation }}</th><th scope="col">{{ d.labels.whose }}</th><th scope="col">{{ d.labels.workaround }}</th></tr>
         </thead>
         <tbody>
           {%- for item in d.limitations.items %}
           <tr>
             <th scope="row">{{ item.limitation }}</th>
             <td><span class="tag tag--{{ item.whose }}">{{ d.whose[item.whose] }}</span></td>
-            <td>{{ item.workaround }}{% if item.link %} <a href="{{ d.blog }}{{ item.link }}">Read more</a>{% endif %}</td>
+            <td>{{ item.workaround }}{% if item.link %} <a href="{{ d.blog }}{{ item.link }}">{{ d.labels.read_more }}</a>{% endif %}</td>
           </tr>
           {%- endfor %}
         </tbody>
@@ -90,7 +91,7 @@ sitemap: false
     </section>
 
     <section class="block reveal" aria-labelledby="h-good">
-      <h2 id="h-good"><span class="md" aria-hidden="true">## </span>What I'm actually good at</h2>
+      <h2 id="h-good"><span class="md" aria-hidden="true">## </span>{{ s.strengths.title }}</h2>
       <ul class="strengths">
         {%- for item in d.strengths %}
         <li>
@@ -102,7 +103,7 @@ sitemap: false
     </section>
 
     <section class="block reveal" aria-labelledby="h-changelog">
-      <h2 id="h-changelog"><span class="md" aria-hidden="true">## </span>Changelog</h2>
+      <h2 id="h-changelog"><span class="md" aria-hidden="true">## </span>{{ s.changelog.title }}</h2>
       <p class="block__intro">{{ d.changelog.intro }}</p>
       <ol class="changelog">
         {%- for r in d.changelog.releases %}
@@ -115,13 +116,13 @@ sitemap: false
     </section>
 
     <section class="block reveal" aria-labelledby="h-writing">
-      <h2 id="h-writing"><span class="md" aria-hidden="true">## </span>Recently written</h2>
+      <h2 id="h-writing"><span class="md" aria-hidden="true">## </span>{{ s.writing.title }}</h2>
       <ul class="posts">
         {%- for post in site.posts limit: d.recent_posts %}
         <li><a href="{{ post.url }}"><time datetime="{{ post.date | date: '%Y-%m-%d' }}">{{ post.date | date: '%Y-%m-%d' }}</time><span>{{ post.title }}</span></a></li>
         {%- endfor %}
       </ul>
-      <p class="more"><a href="/">All posts on the blog</a></p>
+      <p class="more"><a href="/">{{ d.labels.all_posts }}</a></p>
     </section>
 
     <footer class="footer reveal">
@@ -153,19 +154,19 @@ last_updated: {{ d.updated }}
 
 {{ d.agent.intro }}
 
-<span class="h">## Identity</span>
+<span class="h">## {{ d.agent.headings.identity }}</span>
 - Name: {{ d.name }}
 {{ d.agent.role }}
 - Location: {{ d.location }} ({{ d.coords_plain }})
 - Writes at: <a href="{{ d.blog }}">{{ d.blog }}</a>
 {{ d.agent.photo }}
 
-<span class="h">## Current focus</span>
+<span class="h">## {{ d.agent.headings.focus }}</span>
 {%- for line in d.agent.focus %}
 - {{ line }}
 {%- endfor %}
 
-<span class="h">## Known limitations</span>
+<span class="h">## {{ s.limitations.agent | default: s.limitations.title }}</span>
 {%- for item in d.limitations.items %}
 {{ item.agent }}
 {%- if item.link and item.agent_link != false %}
@@ -173,29 +174,29 @@ last_updated: {{ d.updated }}
 {%- endif %}
 {%- endfor %}
 
-<span class="h">## Strengths</span>
+<span class="h">## {{ s.strengths.agent | default: s.strengths.title }}</span>
 {%- for item in d.strengths %}
 {{ item.agent }}
 {%- endfor %}
 
-<span class="h">## Conventions</span>
+<span class="h">## {{ d.agent.headings.conventions }}</span>
 {%- for line in d.conventions %}
 - {{ line }}
 {%- endfor %}
 
-<span class="h">## Changelog</span>
+<span class="h">## {{ s.changelog.agent | default: s.changelog.title }}</span>
 {%- for r in d.changelog.releases %}
 {%- assign kind = r.kind | append: "      " | slice: 0, 7 %}
 {%- assign ver = r.ver | append: "          " | slice: 0, 10 %}
 - {{ ver }}{{ kind }}{{ r.agent }}
 {%- endfor %}
 
-<span class="h">## Recent writing</span>
+<span class="h">## {{ s.writing.agent | default: s.writing.title }}</span>
 {%- for post in site.posts limit: d.recent_posts %}
 - {{ post.date | date: '%Y-%m-%d' }}  <a href="{{ d.blog }}{{ post.url }}">{{ post.title }}</a>
 {%- endfor %}
 
-<span class="h">## Contact</span>
+<span class="h">## {{ d.agent.headings.contact }}</span>
 {%- for c in d.contact reversed %}
 - {{ c.agent }}: <a href="{{ c.url }}">{{ c.url | remove: "mailto:" }}</a>
 {%- endfor %}
@@ -212,7 +213,7 @@ last_updated: {{ d.updated }}
     <div class="scanlines" aria-hidden="true"></div>
     <div class="world" id="arcade-world">
 
-      <section class="sign sign--hero" id="arcade-start" data-exit="Start" data-biome="jungle">
+      <section class="sign sign--hero" id="arcade-start" data-exit="{{ d.labels.arcade_start }}" data-biome="jungle">
         <p class="kicker">{{ d.eyebrow }}</p>
         <h2 class="chrome">{{ d.name }}</h2>
         <p class="lead">{{ d.lead }}</p>
@@ -221,11 +222,11 @@ last_updated: {{ d.updated }}
           <p class="small">{{ d.arcade_sub }}</p>
         </div>
         <p class="meta">{{ d.location }} <span aria-hidden="true">·</span> {{ d.coords }}</p>
-        <p class="hint" aria-hidden="true">Scroll or swipe to drive. Let go and it parks.</p>
+        <p class="hint" aria-hidden="true">{{ d.labels.arcade_hint }}</p>
       </section>
 
-      <section class="sign" id="arcade-currently" data-exit="Currently">
-        <h2 class="plate">Currently</h2>
+      <section class="sign" id="arcade-currently" data-exit="{{ s.currently.exit | default: s.currently.title }}">
+        <h2 class="plate">{{ s.currently.title }}</h2>
         <dl class="now">
           {%- for item in d.currently %}{% if item.arcade != false %}
           <div><dt>{{ item.label }}</dt><dd>{{ item.html }}</dd></div>
@@ -235,36 +236,36 @@ last_updated: {{ d.updated }}
 
       {%- assign mine = d.limitations.items | where: "whose", "mine" %}
       {%- assign theirs = d.limitations.items | where_exp: "item", "item.whose != 'mine'" %}
-      <section class="sign sign--warn" id="arcade-limitations" data-exit="Known limitations" data-step="1/2" data-biome="swamp">
-        <h2 class="plate">Known limitations</h2>
-        <p class="lead">(and workarounds)</p>
-        <p class="intro">{{ d.limitations.intro }} Mine first.</p>
+      <section class="sign sign--warn" id="arcade-limitations" data-exit="{{ s.limitations.exit | default: s.limitations.title }}" data-step="1/2" data-biome="swamp">
+        <h2 class="plate">{{ s.limitations.title }}</h2>
+        <p class="lead">{{ s.limitations.sub }}</p>
+        <p class="intro">{{ d.limitations.intro }} {{ d.labels.arcade_mine_first }}</p>
         <ul class="limits">
           {%- for item in mine %}
           <li>
             <p class="whose whose--{{ item.whose }}">{{ d.whose[item.whose] }}</p>
             <h3>{{ item.limitation }}</h3>
-            <p><span class="label">Workaround</span> {{ item.workaround }}{% if item.link %} <a href="{{ d.blog }}{{ item.link }}">Read more</a>{% endif %}</p>
+            <p><span class="label">{{ d.labels.workaround }}</span> {{ item.workaround }}{% if item.link %} <a href="{{ d.blog }}{{ item.link }}">{{ d.labels.read_more }}</a>{% endif %}</p>
           </li>
           {%- endfor %}
         </ul>
       </section>
 
-      <section class="sign sign--warn" data-exit="Known limitations" data-step="2/2">
-        <p class="lead">Now the AI's.</p>
+      <section class="sign sign--warn" data-exit="{{ s.limitations.exit | default: s.limitations.title }}" data-step="2/2">
+        <p class="lead">{{ d.labels.arcade_theirs }}</p>
         <ul class="limits">
           {%- for item in theirs %}
           <li>
             <p class="whose whose--{{ item.whose }}">{{ d.whose[item.whose] }}</p>
             <h3>{{ item.limitation }}</h3>
-            <p><span class="label">Workaround</span> {{ item.workaround }}{% if item.link %} <a href="{{ d.blog }}{{ item.link }}">Read more</a>{% endif %}</p>
+            <p><span class="label">{{ d.labels.workaround }}</span> {{ item.workaround }}{% if item.link %} <a href="{{ d.blog }}{{ item.link }}">{{ d.labels.read_more }}</a>{% endif %}</p>
           </li>
           {%- endfor %}
         </ul>
       </section>
 
-      <section class="sign sign--wide" id="arcade-strengths" data-exit="What I'm good at">
-        <h2 class="plate">What I'm actually good at</h2>
+      <section class="sign sign--wide" id="arcade-strengths" data-exit="{{ s.strengths.exit | default: s.strengths.title }}">
+        <h2 class="plate">{{ s.strengths.title }}</h2>
         <ul class="strengths">
           {%- for item in d.strengths %}
           <li><h3>{{ item.title }}</h3><p>{{ item.text }}</p></li>
@@ -274,9 +275,9 @@ last_updated: {{ d.updated }}
 
       {%- for era in d.changelog.eras %}
       {%- assign releases = d.changelog.releases | where: "era", forloop.index0 %}
-      <section class="sign sign--log"{% if forloop.first %} id="arcade-changelog"{% endif %} data-exit="Changelog" data-year="{{ era.years }}"{% if forloop.first %} data-biome="city"{% endif %}>
+      <section class="sign sign--log"{% if forloop.first %} id="arcade-changelog"{% endif %} data-exit="{{ s.changelog.exit | default: s.changelog.title }}" data-year="{{ era.years }}"{% if forloop.first %} data-biome="city"{% endif %}>
         {%- if forloop.first %}
-        <h2 class="plate">Changelog</h2>
+        <h2 class="plate">{{ s.changelog.title }}</h2>
         <p class="intro">{{ d.changelog.arcade_intro }}</p>
         {%- else %}
         <p class="kicker">{{ era.kicker }}</p>
@@ -293,18 +294,18 @@ last_updated: {{ d.updated }}
       </section>
       {%- endfor %}
 
-      <section class="sign" id="arcade-writing" data-exit="Recently written" data-biome="beach">
-        <h2 class="plate">Recently written</h2>
+      <section class="sign" id="arcade-writing" data-exit="{{ s.writing.exit | default: s.writing.title }}" data-biome="beach">
+        <h2 class="plate">{{ s.writing.title }}</h2>
         <ul class="posts">
           {%- for post in site.posts limit: d.recent_posts %}
           <li><a href="{{ post.url }}"><time datetime="{{ post.date | date: '%Y-%m-%d' }}">{{ post.date | date: '%Y-%m-%d' }}</time><span>{{ post.title }}</span></a></li>
           {%- endfor %}
         </ul>
-        <p class="small"><a href="/">All posts on the blog</a></p>
+        <p class="small"><a href="/">{{ d.labels.all_posts }}</a></p>
       </section>
 
-      <section class="sign sign--arrival" id="arcade-arrival" data-exit="Arrival">
-        <h2 class="chrome chrome--small">You have arrived.</h2>
+      <section class="sign sign--arrival" id="arcade-arrival" data-exit="{{ d.labels.arcade_arrival }}">
+        <h2 class="chrome chrome--small">{{ d.labels.arcade_arrived }}</h2>
         <ul class="contact">
           {%- for c in d.contact %}
           <li><a href="{{ c.url }}">{{ c.label }}</a></li>
@@ -317,7 +318,7 @@ last_updated: {{ d.updated }}
     <!-- HUD: progress, speed, exits. Filled in by arcade.js. -->
     <nav class="hud" aria-label="Sections">
       <div class="hud__map" aria-hidden="true"><span class="hud__dot"></span></div>
-      <div class="hud__odo"><span class="hud__exit">EXIT 01</span><span class="hud__name">Start</span></div>
+      <div class="hud__odo"><span class="hud__exit">EXIT 01</span><span class="hud__name">{{ d.labels.arcade_start }}</span></div>
       <div class="hud__nav">
         <button class="hud__step hud__prev" type="button" aria-label="Previous sign">‹</button>
         <details class="hud__exits">
