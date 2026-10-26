@@ -14,6 +14,12 @@
   font-display: swap;
 }
 @font-face {
+  font-family: "Pixelify Sans";
+  src: url("../fonts/pixelify-sans-latin-wght.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+}
+@font-face {
   font-family: "JetBrains Mono";
   src: url("../fonts/jetbrains-mono-latin-wght.woff2") format("woff2");
   font-weight: 100 800;
@@ -42,6 +48,7 @@
   --display: "Orbitron", "Space Grotesk", ui-sans-serif, sans-serif;
   --sans: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --pixel: "Pixelify Sans", "Orbitron", ui-sans-serif, sans-serif;
   --gutter: clamp(16px, 5vw, 56px);
 }
 
@@ -101,8 +108,10 @@ body:has(#view-agent:checked) .topbar__file b { color: var(--amber); }
 
 /* ---------- Road canvas ---------- */
 .road-canvas { display: none; }
+/* Drawn at one canvas pixel per art pixel; road.js sizes it to whole pixels and it scales up crisp. */
 html.road .road-canvas, html.parked .road-canvas {
-  display: block; position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%;
+  display: block; position: fixed; left: 0; top: 0; z-index: 0; width: 100%; height: 100%;
+  image-rendering: pixelated;
 }
 
 /* ---------- Signs: shared look ---------- */
@@ -261,7 +270,7 @@ html:not(.road) .hint { display: none; }
   html.road .sign--cols .limits li:nth-child(2) { border-top: 0; padding-top: 4px; }
   html.road .sign--cols .strengths { grid-template-columns: repeat(4, 1fr); }
   html.road .sign--hero .chrome { font-size: clamp(2.2rem, 9vw, 3.6rem); }
-  html.road .sign { background: #0b0713; }
+  html.road .sign { background: none; }
   /* Posts: two legs from the board down to the road. Height in board pixels, set by road.js. */
   .post { display: none; }
   html.road .post {
@@ -361,6 +370,41 @@ html:not(.road) .hint { display: none; }
   .hud__exits summary { padding: 4px 12px; }
 }
 
+/* ---------- Pixel look (screen only; print stays the plain CV) ----------
+   Boards get a 9-slice pixel frame with stepped corners, headings and the HUD a pixel font,
+   shadows are hard. Body text stays a normal font for reading. */
+@media screen {
+  .sign {
+    border: 9px solid transparent; border-radius: 0; box-shadow: none; background: none;
+    border-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' shape-rendering='crispEdges'><rect x='2' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='3' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='4' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='5' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='6' y='0' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='1' width='1' height='1' fill='%23ff3d7f'/><rect x='2' y='1' width='1' height='1' fill='%234a1238'/><rect x='3' y='1' width='1' height='1' fill='%234a1238'/><rect x='4' y='1' width='1' height='1' fill='%234a1238'/><rect x='5' y='1' width='1' height='1' fill='%234a1238'/><rect x='6' y='1' width='1' height='1' fill='%234a1238'/><rect x='7' y='1' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='2' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='2' width='1' height='1' fill='%234a1238'/><rect x='2' y='2' width='1' height='1' fill='%230b0713'/><rect x='3' y='2' width='1' height='1' fill='%230b0713'/><rect x='4' y='2' width='1' height='1' fill='%230b0713'/><rect x='5' y='2' width='1' height='1' fill='%230b0713'/><rect x='6' y='2' width='1' height='1' fill='%230b0713'/><rect x='7' y='2' width='1' height='1' fill='%234a1238'/><rect x='8' y='2' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='3' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='3' width='1' height='1' fill='%234a1238'/><rect x='2' y='3' width='1' height='1' fill='%230b0713'/><rect x='3' y='3' width='1' height='1' fill='%230b0713'/><rect x='4' y='3' width='1' height='1' fill='%230b0713'/><rect x='5' y='3' width='1' height='1' fill='%230b0713'/><rect x='6' y='3' width='1' height='1' fill='%230b0713'/><rect x='7' y='3' width='1' height='1' fill='%234a1238'/><rect x='8' y='3' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='4' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='4' width='1' height='1' fill='%234a1238'/><rect x='2' y='4' width='1' height='1' fill='%230b0713'/><rect x='3' y='4' width='1' height='1' fill='%230b0713'/><rect x='4' y='4' width='1' height='1' fill='%230b0713'/><rect x='5' y='4' width='1' height='1' fill='%230b0713'/><rect x='6' y='4' width='1' height='1' fill='%230b0713'/><rect x='7' y='4' width='1' height='1' fill='%234a1238'/><rect x='8' y='4' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='5' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='5' width='1' height='1' fill='%234a1238'/><rect x='2' y='5' width='1' height='1' fill='%230b0713'/><rect x='3' y='5' width='1' height='1' fill='%230b0713'/><rect x='4' y='5' width='1' height='1' fill='%230b0713'/><rect x='5' y='5' width='1' height='1' fill='%230b0713'/><rect x='6' y='5' width='1' height='1' fill='%230b0713'/><rect x='7' y='5' width='1' height='1' fill='%234a1238'/><rect x='8' y='5' width='1' height='1' fill='%23ff3d7f'/><rect x='0' y='6' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='6' width='1' height='1' fill='%234a1238'/><rect x='2' y='6' width='1' height='1' fill='%230b0713'/><rect x='3' y='6' width='1' height='1' fill='%230b0713'/><rect x='4' y='6' width='1' height='1' fill='%230b0713'/><rect x='5' y='6' width='1' height='1' fill='%230b0713'/><rect x='6' y='6' width='1' height='1' fill='%230b0713'/><rect x='7' y='6' width='1' height='1' fill='%234a1238'/><rect x='8' y='6' width='1' height='1' fill='%23ff3d7f'/><rect x='1' y='7' width='1' height='1' fill='%23ff3d7f'/><rect x='2' y='7' width='1' height='1' fill='%234a1238'/><rect x='3' y='7' width='1' height='1' fill='%234a1238'/><rect x='4' y='7' width='1' height='1' fill='%234a1238'/><rect x='5' y='7' width='1' height='1' fill='%234a1238'/><rect x='6' y='7' width='1' height='1' fill='%234a1238'/><rect x='7' y='7' width='1' height='1' fill='%23ff3d7f'/><rect x='2' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='3' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='4' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='5' y='8' width='1' height='1' fill='%23ff3d7f'/><rect x='6' y='8' width='1' height='1' fill='%23ff3d7f'/></svg>") 3 fill / 9px / 0 stretch;
+  }
+  .sign--warn { border-image-source: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='9' height='9' viewBox='0 0 9 9' shape-rendering='crispEdges'><rect x='2' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='3' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='4' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='5' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='6' y='0' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='1' width='1' height='1' fill='%23ffd27a'/><rect x='2' y='1' width='1' height='1' fill='%234a3410'/><rect x='3' y='1' width='1' height='1' fill='%234a3410'/><rect x='4' y='1' width='1' height='1' fill='%234a3410'/><rect x='5' y='1' width='1' height='1' fill='%234a3410'/><rect x='6' y='1' width='1' height='1' fill='%234a3410'/><rect x='7' y='1' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='2' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='2' width='1' height='1' fill='%234a3410'/><rect x='2' y='2' width='1' height='1' fill='%230b0713'/><rect x='3' y='2' width='1' height='1' fill='%230b0713'/><rect x='4' y='2' width='1' height='1' fill='%230b0713'/><rect x='5' y='2' width='1' height='1' fill='%230b0713'/><rect x='6' y='2' width='1' height='1' fill='%230b0713'/><rect x='7' y='2' width='1' height='1' fill='%234a3410'/><rect x='8' y='2' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='3' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='3' width='1' height='1' fill='%234a3410'/><rect x='2' y='3' width='1' height='1' fill='%230b0713'/><rect x='3' y='3' width='1' height='1' fill='%230b0713'/><rect x='4' y='3' width='1' height='1' fill='%230b0713'/><rect x='5' y='3' width='1' height='1' fill='%230b0713'/><rect x='6' y='3' width='1' height='1' fill='%230b0713'/><rect x='7' y='3' width='1' height='1' fill='%234a3410'/><rect x='8' y='3' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='4' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='4' width='1' height='1' fill='%234a3410'/><rect x='2' y='4' width='1' height='1' fill='%230b0713'/><rect x='3' y='4' width='1' height='1' fill='%230b0713'/><rect x='4' y='4' width='1' height='1' fill='%230b0713'/><rect x='5' y='4' width='1' height='1' fill='%230b0713'/><rect x='6' y='4' width='1' height='1' fill='%230b0713'/><rect x='7' y='4' width='1' height='1' fill='%234a3410'/><rect x='8' y='4' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='5' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='5' width='1' height='1' fill='%234a3410'/><rect x='2' y='5' width='1' height='1' fill='%230b0713'/><rect x='3' y='5' width='1' height='1' fill='%230b0713'/><rect x='4' y='5' width='1' height='1' fill='%230b0713'/><rect x='5' y='5' width='1' height='1' fill='%230b0713'/><rect x='6' y='5' width='1' height='1' fill='%230b0713'/><rect x='7' y='5' width='1' height='1' fill='%234a3410'/><rect x='8' y='5' width='1' height='1' fill='%23ffd27a'/><rect x='0' y='6' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='6' width='1' height='1' fill='%234a3410'/><rect x='2' y='6' width='1' height='1' fill='%230b0713'/><rect x='3' y='6' width='1' height='1' fill='%230b0713'/><rect x='4' y='6' width='1' height='1' fill='%230b0713'/><rect x='5' y='6' width='1' height='1' fill='%230b0713'/><rect x='6' y='6' width='1' height='1' fill='%230b0713'/><rect x='7' y='6' width='1' height='1' fill='%234a3410'/><rect x='8' y='6' width='1' height='1' fill='%23ffd27a'/><rect x='1' y='7' width='1' height='1' fill='%23ffd27a'/><rect x='2' y='7' width='1' height='1' fill='%234a3410'/><rect x='3' y='7' width='1' height='1' fill='%234a3410'/><rect x='4' y='7' width='1' height='1' fill='%234a3410'/><rect x='5' y='7' width='1' height='1' fill='%234a3410'/><rect x='6' y='7' width='1' height='1' fill='%234a3410'/><rect x='7' y='7' width='1' height='1' fill='%23ffd27a'/><rect x='2' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='3' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='4' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='5' y='8' width='1' height='1' fill='%23ffd27a'/><rect x='6' y='8' width='1' height='1' fill='%23ffd27a'/></svg>"); }
+  .sign--warn::before { border-radius: 0; }
+  .chrome {
+    font-family: var(--pixel); font-weight: 700; font-style: normal; letter-spacing: 0.04em; line-height: 0.9;
+    background: linear-gradient(180deg, #fff 0 32%, #ffe9c7 32% 46%, var(--sun) 46% 62%, var(--sun-low) 62% 82%, #b31d6a 82%);
+    -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(4px 4px 0 #3a0d24);
+  }
+  .plate { font-family: var(--pixel); font-weight: 700; letter-spacing: 0.05em; text-shadow: 3px 3px 0 #3a0d24; }
+  .limits h3, .log h3, .strengths h3, .contact a:not([href^="mailto"]) { font-family: var(--pixel); font-weight: 600; letter-spacing: 0.01em; }
+  .sign--warn::before, .sign--log::after { font-family: var(--pixel); font-style: normal; letter-spacing: 0.08em; }
+  .sign--log::after { -webkit-text-stroke: 0; color: var(--sun); text-shadow: 2px 2px 0 #3a0d24; }
+  .strengths li, .posts a, .whose, .portrait { border-radius: 0; }
+  .portrait { box-shadow: 4px 4px 0 #3a0d24; }
+  .hud__exit, .hud__name, .hud__kmh, .hud__unit, .hud__exits summary, .hud__list button, .switch__opt, .hud__step { font-family: var(--pixel); }
+  .hud__kmh { text-shadow: 3px 3px 0 #3a0d24; }
+  .switch, .switch__opt, .hud__exits summary, .hud__step, .hud__list, .hud__list button, .hud__map, .hud__dot { border-radius: 0; }
+  .hud__exits summary, .hud__step, .switch { box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.6); }
+  .hud__dot { box-shadow: 0 0 0 2px #3a0d24; }
+  /* Scanlines: one dark line per art pixel row, over the road only (the boards sit above). */
+  .scanlines { display: none; }
+  html.road .scanlines {
+    display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background: repeating-linear-gradient(to bottom, transparent 0 calc(var(--pix, 4px) - 1px), rgba(0, 0, 0, 0.18) calc(var(--pix, 4px) - 1px) var(--pix, 4px));
+  }
+}
+
 /* ---------- Agent view: amber phosphor (as v1) ---------- */
 .view--agent { padding: clamp(16px, 4vw, 48px) var(--gutter) 64px; }
 .term {
@@ -405,7 +449,7 @@ html:not(.road) .hint { display: none; }
   @page { size: A4; margin: 12mm 14mm; }
   html { font-size: 8.5pt; background: #fff; }
   body { background: #fff; color: #111; line-height: 1.35; }
-  .topbar, .road-canvas, .post, .hud, .view--agent, .hint, .portrait, .small, .colophon, .intro,
+  .topbar, .road-canvas, .scanlines, .post, .hud, .view--agent, .hint, .portrait, .small, .colophon, .intro,
   .sign--warn > .lead, .sign--log > .kicker { display: none !important; }
   #limitations > .lead { display: block !important; }
   .view--human { display: block !important; }

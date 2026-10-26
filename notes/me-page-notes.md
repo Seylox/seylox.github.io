@@ -531,3 +531,43 @@ viewport with 4x CPU throttling (16.7 ms average, max 17.7 ms); reduced motion h
 Open:
 - The model is simple; candidates for a second pass: a smoother nose, mirrors, visible
   steering wheel, hair that moves at speed.
+
+### v3.5: the whole world in pixel art (2026-10-26)
+
+Checkpoint before this: commit `2422061`, tag `me-v3.4` (local only).
+
+Feedback on v3.4: loves the car, the pixel art and the animations; "we might end up using
+this, at least for a variant of the site". Asked for the rest of the world in the same pixel
+style as the car.
+
+Interview decisions (locked):
+- **Low-res frame, palette and dithering:** the road scene is drawn at one canvas pixel per art
+  pixel (`PIX` CSS pixels, chosen so the car is about 64 art pixels wide) and scaled up with
+  `image-rendering: pixelated`. Every frame is then reduced to a fixed palette (about 90
+  colours) with 4 x 4 ordered dithering (a lookup table over 15-bit RGB).
+- **Pixel sprites:** the vector scenery is kept only as a drawing source: each shape is drawn
+  small, snapped to three or four colours (dark, dark highlight, a dimmed rim) and given a
+  one-pixel outline in the biome's neon. Buildings, lamps and neon signs (with a 3 x 5 pixel
+  font) are drawn pixel by pixel.
+- **Boards:** a 9-slice pixel frame (SVG `border-image`, stepped corners), hard pixel shadows,
+  and Pixelify Sans (OFL, self-hosted, `fonts/OFL-pixelify-sans.txt`) for headings, warning
+  bands, year ranges and the HUD. Body text stays Space Grotesk. Print is unchanged.
+- **Extras, all four:** palette cycling (waves, the volcano's lava, the chasing letters of the
+  pink neon sign); faint scanlines, one per art-pixel row, under the boards; more life (an
+  alligator that surfaces in the swamp, a parrot crossing the jungle sky, teal traffic in the
+  city's left lane, a lighthouse with a sweeping beam at the beach); chunkier pixels on phones
+  (at least 3 CSS pixels per art pixel).
+
+Checked: every board fits at 1280x800 (0.85 to 1.0) and 844x390 (0.55 to 0.80); 60 fps with
+4x CPU throttling on the phone viewport and at 1920x1080 (the palette pass is cheap at
+275 x 155 art pixels); reduced motion has no errors; print is one A4 page.
+
+Open:
+- Sprites near the camera are magnified, so their pixels are bigger than the world's (as in
+  the arcade original). Larger source sprites would fix that at the cost of shimmer far away.
+- The portrait photo is not pixelated; that could be a fun touch, or a step too far.
+- (v3.5, later) A calm ocean in the final shot. A first try with rows of crests and fast colour
+  cycling looked hectic; now the sea is a smooth, still gradient (outside the cycling
+  colours) with a few faint lines, and only three soft waves at a time, each a single long
+  line that rolls in over about 14 s, gets lighter and breaks gently. The foam washes up the
+  sand slowly; the sea's colour cycle on the approach is slowed to 1.2 steps a second.

@@ -11,7 +11,8 @@
 
   const root = document.documentElement;
   const canvas = document.querySelector(".road-canvas");
-  const ctx = canvas.getContext("2d", { alpha: false });
+  // Read back every frame to apply the palette; small enough that the CPU canvas is faster.
+  const ctx = canvas.getContext("2d", { alpha: false, willReadFrequently: true });
   const world = document.getElementById("world");
   const topbar = document.querySelector(".topbar");
   const agentView = document.getElementById("view-agent");
@@ -62,9 +63,91 @@
     { road: "#1d1328", rumble: "#ff7a1a", lane: "#f1e9e4" },
     { road: "#1a1124", rumble: "#ff2d6f", lane: null },
   ];
-  const SEA = ["#1b1b45", "#151538"];
-  const FOAM = ["#ffc2d4", "#6a3462"];
   const DARK = "#0b0712";
+
+  // ---- Palette: every frame is reduced to these colours with ordered dithering, like a
+  // 16-bit console. Three groups cycle instead of being redrawn: waves, lava, neon signs.
+  // Their colours are reserved: only pixels drawn in exactly that colour take part. ----
+  const CYCLES = {
+    sea: { colors: ["#1b1b45", "#232458", "#151538", "#2c2d6a"], rate: 1.2 },
+    lava: { colors: ["#ffd47c", "#ff7c1c", "#ff2f71", "#ff7c1c"], rate: 5 },
+    neon: { colors: ["#ff3e81", "#a8285a", "#ffd0e2", "#ff3e81"], rate: 6 },
+  };
+  const SEA = CYCLES.sea.colors;
+  const hexMix = (a, b, t) => "#" + [1, 3, 5].map((i) => Math.round(parseInt(a.slice(i, i + 2), 16) * (1 - t) + parseInt(b.slice(i, i + 2), 16) * t).toString(16).padStart(2, "0")).join("");
+  const dimRim = (rim) => hexMix(rim, DARK, 0.55); // inner detail lines of the scenery
+  const FOAM = ["#ffc2d4", "#6a3462"];
+  const PALETTE = [
+    // skies and fog
+    "#04080a", "#0c1f1d", "#2e1a3a", "#8a2350", "#05090c", "#0e1f25", "#2a2541", "#6e2c52",
+    "#07050c", "#1a0b2e", "#4a1240", "#a02a5a", "#1b0d34", "#43164e", "#c0365c",
+    "#173326", "#1b3436", "#3a1238", "#3c1840",
+    // ground, road, sand
+    "#0d2114", "#09180f", "#0c2128", "#08181d", "#2a1d36", "#221730", "#3a2630", "#31202a",
+    "#1d1328", "#1a1124", "#f1e9e4", ...FOAM,
+    // sun, lamps, neon, windows
+    "#ffd27a", "#ffb454", "#ff7a1a", "#ff2d6f", "#ff3d7f", "#7ad7ff", "#27c992", "#62bfe0",
+    "#fff3d6", "#ffffff", "#b9b4c4",
+    // darks for scenery
+    "#0b0712", "#0e0818", "#1d1128", "#24132f", "#14201f", "#06110b", "#132428", "#071417",
+    "#1c0d2c", "#0d0617", "#1e0e2c", "#1a0e1c", "#3a3040", "#6a5a70",
+    // the car
+    "#2a1840", "#3e2364", "#583086", "#181022", "#261a38", "#18141e", "#847aa2",
+    "#e8b48a", "#3a2418", "#f0c860", "#2a6fd0", "#c83c70", "#a0182c", "#ff3048", "#fff3c4",
+    // traffic, wave crests
+    "#103538", "#1c5a60", "#28909a", "#4a4f9a", "#8a90d0", "#2a2a5e", "#16163a", "#202048",
+    ...BIOMES.map((b) => dimRim(b.rim)),
+  ];
+  const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v / 16 - 0.47) * 12);
+  const packRGB = (h) => { const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); return ((255 << 24) | (b << 16) | (g << 8) | r) >>> 0; };
+  const paletteColors = [...PALETTE, ...Object.values(CYCLES).flatMap((c) => c.colors)];
+  const paletteOut = new Uint32Array(paletteColors.map(packRGB));
+  const reserved = new Map(); // exact colour -> palette index, for the cycling groups
+  {
+    let i = PALETTE.length;
+    for (const cycle of Object.values(CYCLES)) {
+      cycle.start = i;
+      for (const c of cycle.colors) reserved.set(packRGB(c) & 0xffffff, i++);
+    }
+  }
+  // Nearest palette colour for every 15-bit RGB value, worked out once.
+  const LUT = (() => {
+    const base = PALETTE.map((h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)));
+    const lut = new Uint8Array(32768);
+    for (let r = 0; r < 32; r++) for (let g = 0; g < 32; g++) for (let b = 0; b < 32; b++) {
+      const R = r * 8 + 4, G = g * 8 + 4, B = b * 8 + 4;
+      let best = 0, bestD = Infinity;
+      base.forEach(([pr, pg, pb], i) => {
+        const d = (R - pr) ** 2 * 3 + (G - pg) ** 2 * 4 + (B - pb) ** 2 * 2;
+        if (d < bestD) { bestD = d; best = i; }
+      });
+      lut[(r << 10) | (g << 5) | b] = best;
+    }
+    return lut;
+  })();
+
+  function applyPalette() {
+    for (const cycle of Object.values(CYCLES)) {
+      const n = cycle.colors.length, shift = Math.floor(clock * cycle.rate);
+      for (let k = 0; k < n; k++) paletteOut[cycle.start + k] = packRGB(cycle.colors[(k + shift) % n]);
+    }
+    const img = ctx.getImageData(0, 0, W, Hh);
+    const px = new Uint32Array(img.data.buffer);
+    const q = (v) => (v < 0 ? 0 : v > 255 ? 31 : v >> 3);
+    for (let y = 0, i = 0; y < Hh; y++) {
+      const row = (y & 3) << 2;
+      for (let x = 0; x < W; x++, i++) {
+        const v = px[i];
+        let idx = reserved.get(v & 0xffffff);
+        if (idx === undefined) {
+          const t = BAYER[row | (x & 3)];
+          idx = LUT[(q((v & 255) + t) << 10) | (q(((v >> 8) & 255) + t) << 5) | q(((v >> 16) & 255) + t)];
+        }
+        px[i] = paletteOut[idx];
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+  }
 
   // ---- Small helpers ----
   let seed = 7; // seeded random, so the scenery is the same on every visit
@@ -227,7 +310,7 @@
     });
   });
 
-  // Swamp: bald cypress with hanging moss, reeds, dead snags, and a pair of eyes in the water.
+  // Swamp: bald cypress with hanging moss, reeds, dead snags.
   const cypress = (rim) => sprite(260, 560, { w: 2600, h: 5600 }, (g, w, h) => {
     rimFill(g, rim, 5, () => {
       g.beginPath();
@@ -287,81 +370,6 @@
     }
   });
 
-  const eyes = sprite(140, 50, { w: 800, h: 290 }, (g, w, h) => {
-    g.strokeStyle = "rgba(122, 215, 255, 0.45)";
-    g.lineWidth = 2;
-    g.beginPath(); g.ellipse(w / 2, h * 0.72, w * 0.42, h * 0.18, 0, 0, Math.PI * 2); g.stroke();
-    for (const x of [w * 0.4, w * 0.6]) {
-      const glow = g.createRadialGradient(x, h * 0.5, 0, x, h * 0.5, 14);
-      glow.addColorStop(0, "#fff6b0");
-      glow.addColorStop(0.3, "#ffd27a");
-      glow.addColorStop(1, "rgba(255, 210, 122, 0)");
-      g.fillStyle = glow;
-      g.fillRect(x - 14, h * 0.5 - 14, 28, 28);
-    }
-  });
-
-  // City: lamp poles, towers with lit windows, neon signs.
-  const pole = sprite(96, 520, { w: 380, h: 3200 }, (g, w, h) => {
-    const glow = g.createRadialGradient(w / 2, 40, 2, w / 2, 40, 46);
-    glow.addColorStop(0, "#fff3d6");
-    glow.addColorStop(0.25, "#ffb454");
-    glow.addColorStop(1, "rgba(255, 122, 26, 0)");
-    g.fillStyle = glow;
-    g.fillRect(0, 0, w, 96);
-    g.fillStyle = "#24132f";
-    g.fillRect(w / 2 - 5, 52, 10, h - 52);
-    g.fillStyle = "#ff3d7f";
-    g.fillRect(w / 2 + 3, 52, 2, h - 52);
-  });
-
-  const building = (rim) => {
-    const cw = Math.round(between(150, 260)), ch = Math.round(between(300, 620));
-    return sprite(cw, ch, { w: cw * 18, h: ch * 18 }, (g, w, h) => {
-      g.fillStyle = "#0e0818";
-      g.fillRect(0, 10, w, h - 10);
-      g.fillStyle = rim;
-      g.fillRect(0, 10, w, 3);
-      g.globalAlpha = 0.6;
-      g.fillRect(0, 10, 2, h - 10);
-      g.fillRect(w - 2, 10, 2, h - 10);
-      g.globalAlpha = 1;
-      if (rand() < 0.5) g.fillRect(w * 0.7, 0, 2, 12); // antenna
-      const cols = Math.floor((w - 16) / 18), rows = Math.floor((h - 40) / 24);
-      for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          if (rand() > 0.32) continue;
-          g.fillStyle = pick(["#ffb454", "#ffb454", "#ffd27a", "#7ad7ff", "#ff3d7f"]);
-          g.globalAlpha = between(0.45, 0.95);
-          g.fillRect(12 + c * 18, 28 + r * 24, 9, 12);
-        }
-      }
-      g.globalAlpha = 1;
-    });
-  };
-
-  const neon = (text, color) => sprite(320, 260, { w: 2800, h: 2250 }, (g, w, h) => {
-    g.clearRect(0, 0, w, h);
-    g.fillStyle = "#1d1128";
-    g.fillRect(w / 2 - 6, 110, 12, h - 110);
-    g.fillStyle = DARK;
-    g.fillRect(14, 14, w - 28, 92);
-    g.shadowColor = color;
-    g.shadowBlur = 16;
-    g.strokeStyle = color;
-    g.lineWidth = 4;
-    g.strokeRect(14, 14, w - 28, 92);
-    let size = 52;
-    g.font = `800 ${size}px Orbitron, "Space Grotesk", sans-serif`;
-    size *= Math.min(1, (w - 70) / g.measureText(text).width);
-    g.font = `800 ${size}px Orbitron, "Space Grotesk", sans-serif`;
-    g.fillStyle = color;
-    g.textAlign = "center";
-    g.textBaseline = "middle";
-    g.fillText(text, w / 2, 62);
-    g.shadowBlur = 0;
-  });
-
   // Beach: palms, umbrellas, a lifeguard tower.
   const umbrella = (rim) => sprite(240, 250, { w: 1800, h: 1900 }, (g, w, h) => {
     rimLine(g, rim, 4, () => { g.beginPath(); g.moveTo(w * 0.5, h); g.lineTo(w * 0.47, h * 0.12); });
@@ -402,17 +410,148 @@
     });
   });
 
-  seed = 3;
-  const RIM = Object.fromEntries(BIOMES.map((b) => [b.name, b.rim]));
-  const SPRITES = {
-    tree: tree(RIM.jungle), banana: banana(RIM.jungle), fern: fern(RIM.jungle), jpalm: palm(RIM.jungle),
-    cypress: cypress(RIM.swamp), reeds: reeds(RIM.swamp), snag: snag(RIM.swamp), eyes,
-    pole, buildings: [1, 2, 3, 4, 5].map(() => building(rand() < 0.7 ? RIM.city : "#7ad7ff")),
-    neon: [neon("MOTEL", "#ff3d7f"), neon("OPEN 24H", "#7ad7ff"), neon("ARCADE", "#ffb454")],
-    palm: palm(RIM.city), umbrella: umbrella(RIM.beach), tower: tower(RIM.beach),
+  // ---- Pixel art. Each shape above is drawn small, snapped to a few colours and given a
+  // one-pixel neon outline; buildings, lamps, signs and critters are drawn pixel by pixel. ----
+  function pixelize(src, w, h, colors, outline) {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d", { willReadFrequently: true });
+    g.imageSmoothingQuality = "high";
+    g.drawImage(src, 0, 0, w, h);
+    const img = g.getImageData(0, 0, w, h), d = img.data;
+    const pal = colors.map(rgb);
+    const solid = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+      if (d[i * 4 + 3] < 110) { d[i * 4 + 3] = 0; continue; }
+      solid[i] = 1;
+      let best = pal[0], bestD = Infinity;
+      for (const q of pal) {
+        const dd = (d[i * 4] - q[0]) ** 2 + (d[i * 4 + 1] - q[1]) ** 2 + (d[i * 4 + 2] - q[2]) ** 2;
+        if (dd < bestD) { bestD = dd; best = q; }
+      }
+      d.set([best[0], best[1], best[2], 255], i * 4);
+    }
+    if (outline) {
+      const o = rgb(outline);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        const i = y * w + x;
+        if (solid[i]) continue;
+        if ((x > 0 && solid[i - 1]) || (x < w - 1 && solid[i + 1]) || (y > 0 && solid[i - w]) || (y < h - 1 && solid[i + w])) d.set([o[0], o[1], o[2], 255], i * 4);
+      }
+    }
+    g.putImageData(img, 0, 0);
+    c.world = src.world;
+    return c;
+  }
+
+  // Native pixel sprites: paint(px) gets a fillRect-like helper that takes a colour.
+  function pixelArt(w, h, world, paint) {
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    const g = c.getContext("2d");
+    paint((x, y, pw, ph, color) => { g.fillStyle = color; g.fillRect(x, y, pw, ph); }, g);
+    c.world = world;
+    return c;
+  }
+
+  // A 3 x 5 pixel font, only the letters the signs need.
+  const GLYPHS = {
+    A: "010101111101101", C: "011100100100011", D: "110101101101110", E: "111100110100111",
+    H: "101101111101101", L: "100100100100111", M: "101111111101101", N: "110101101101101",
+    O: "010101101101010", P: "110101110100100", R: "110101110101101", T: "111010010010010",
+    2: "110001010100111", 4: "101101111001001", " ": "000000000000000",
+  };
+  function pixelText(px, text, x, y, color) {
+    [...text].forEach((ch, k) => {
+      const bits = GLYPHS[ch];
+      for (let i = 0; i < 15; i++) if (bits[i] === "1") px(x + k * 4 + (i % 3), y + Math.floor(i / 3), 1, 1, typeof color === "function" ? color(k) : color);
+    });
+  }
+
+  const lamp = pixelArt(7, 36, { w: 380, h: 3200 }, (px) => {
+    px(1, 0, 5, 3, "#ffb454");
+    px(2, 0, 3, 2, "#fff3d6");
+    px(0, 1, 1, 1, "#ff7a1a"); px(6, 1, 1, 1, "#ff7a1a");
+    px(3, 3, 1, 33, "#24132f");
+    px(4, 3, 1, 33, "#ff3d7f");
+  });
+
+  const building = (rim) => {
+    const w = Math.round(between(24, 40)), h = Math.round(between(48, 96));
+    return pixelArt(w, h, { w: w * 117, h: h * 117 }, (px) => {
+      px(0, 2, w, h - 2, "#0e0818");
+      px(0, 2, w, 1, rim);
+      px(0, 3, 1, h - 3, "#1d1128");
+      px(w - 1, 3, 1, h - 3, "#1d1128");
+      if (rand() < 0.5) px(Math.round(w * 0.7), 0, 1, 2, rim); // antenna
+      for (let y = 6; y < h - 3; y += 4) {
+        for (let x = 3; x < w - 3; x += 4) {
+          if (rand() > 0.34) continue;
+          px(x, y, 2, 2, pick(["#ffb454", "#ffb454", "#ffd27a", "#7ad7ff", "#ff3d7f"]));
+        }
+      }
+    });
   };
 
-  for (const s of SPRITES.neon) s.flicker = true;
+  // Neon signs. The pink one takes its colours from the cycling group, so its letters chase.
+  const sign = (text, color) => {
+    const w = text.length * 4 + 7;
+    return pixelArt(w, 26, { w: w * 70, h: 26 * 70 }, (px) => {
+      px(Math.floor(w / 2) - 1, 11, 2, 15, "#1d1128");
+      px(0, 0, w, 11, DARK);
+      const edge = color === "cycle" ? (k) => CYCLES.neon.colors[k % 4] : () => color;
+      for (let x = 0; x < w; x++) { px(x, 0, 1, 1, edge(x)); px(x, 10, 1, 1, edge(x + 2)); }
+      px(0, 0, 1, 11, edge(1)); px(w - 1, 0, 1, 11, edge(3));
+      pixelText(px, text, 4, 3, color === "cycle" ? (k) => CYCLES.neon.colors[k % 4] : color);
+    });
+  };
+
+  // An alligator: mostly two eyes on the water, now and then the whole head.
+  const gator = [false, true].map((up) => pixelArt(18, 7, { w: 900, h: 350 }, (px) => {
+    px(1, 6, 16, 1, "#62bfe0");
+    if (up) {
+      px(3, 3, 13, 3, "#14201f");
+      px(13, 4, 4, 2, "#14201f");
+      for (let x = 7; x < 16; x += 2) px(x, 5, 1, 1, "#f1e9e4");
+      px(4, 2, 2, 1, "#14201f"); px(8, 2, 2, 1, "#14201f");
+      px(4, 2, 1, 1, "#ffd27a"); px(8, 2, 1, 1, "#ffd27a");
+    } else {
+      px(4, 4, 3, 2, "#14201f"); px(9, 4, 3, 2, "#14201f");
+      px(5, 4, 1, 1, "#ffd27a"); px(10, 4, 1, 1, "#ffd27a");
+    }
+  }));
+
+  // A parrot crossing the jungle sky, wings up and down.
+  const parrot = [0, 1].map((f) => pixelArt(9, 7, null, (px) => {
+    px(2, 3, 5, 2, "#ff2d6f");
+    px(7, 2, 2, 2, "#ff2d6f");
+    px(8, 3, 1, 1, "#ffd27a");
+    px(0, 4, 2, 1, "#2a6fd0");
+    if (f) { px(3, 0, 2, 3, "#2a6fd0"); px(4, 1, 2, 2, "#ffd27a"); }
+    else { px(3, 5, 2, 2, "#2a6fd0"); px(4, 5, 2, 1, "#ffd27a"); }
+  }));
+
+  seed = 3;
+  const RIM = Object.fromEntries(BIOMES.map((b) => [b.name, b.rim]));
+  // Inside a sprite the neon lines are dimmed; only the outline is at full strength.
+  const plant = (src, w, h, rim, extra = []) => pixelize(src, Math.round(w * 1.6), Math.round(h * 1.6), [DARK, "#1d1128", dimRim(rim), ...extra], rim);
+  const SPRITES = {
+    tree: plant(tree(RIM.jungle), 46, 54, RIM.jungle),
+    banana: plant(banana(RIM.jungle), 28, 28, RIM.jungle),
+    fern: plant(fern(RIM.jungle), 34, 18, RIM.jungle),
+    jpalm: plant(palm(RIM.jungle), 42, 56, RIM.jungle),
+    cypress: plant(cypress(RIM.swamp), 26, 56, RIM.swamp),
+    reeds: plant(reeds(RIM.swamp), 16, 22, RIM.swamp),
+    snag: plant(snag(RIM.swamp), 26, 36, RIM.swamp),
+    gator,
+    pole: lamp,
+    buildings: [1, 2, 3, 4, 5].map(() => building(rand() < 0.7 ? RIM.city : "#7ad7ff")),
+    neon: [sign("MOTEL", "cycle"), sign("OPEN 24H", "#7ad7ff"), sign("ARCADE", "#ffb454")],
+    palm: plant(palm(RIM.city), 42, 56, RIM.city),
+    umbrella: plant(umbrella(RIM.beach), 24, 25, RIM.beach, ["#ff3d7f", "#1a0b2e"]),
+    tower: plant(tower(RIM.beach), 26, 36, RIM.beach, ["#ffb454"]),
+  };
+  SPRITES.neon[1].flicker = SPRITES.neon[2].flicker = true;
 
   // ---- The car: a low-poly model, rasterised every frame into a small pixel buffer (with a
   // depth buffer, so it is right from every angle) and scaled up crisp: pixel art that can
@@ -613,7 +752,7 @@
 
   // Draws the car into the pixel buffer. yaw 0 shows the tail, pi/2 the right side (nose to
   // the right). Returns the screen points the glows need.
-  function renderCar({ yaw, roll, steer, door, dist, brake }) {
+  function renderCar({ yaw, roll, steer, door, dist, brake, body = CAR.body }) {
     const { w, ground, f, pitch } = CAR_PX;
     const ca = Math.cos(yaw), sa = Math.sin(yaw), cr = Math.cos(roll), sr = Math.sin(roll);
     const cp = Math.cos(pitch), sp = Math.sin(pitch);
@@ -656,7 +795,7 @@
       let color;
       if (prim.color === "tail") color = pack(brake > 0.5 ? CAR.tailOn : CAR.tail);
       else if (prim.glow) color = pack(prim.color);
-      else color = pack(prim.color, 0.38 + 0.62 * Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]));
+      else color = pack(prim.color === CAR.body ? body : prim.color, 0.38 + 0.62 * Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]));
       const s = pts.map(screen);
       if (prim.alpha) { glass.push([s, color, prim.alpha]); continue; }
       for (let i = 1; i < s.length - 1; i++) carTriangle(s[0], s[i], s[i + 1], color, 0);
@@ -772,7 +911,7 @@
           if (rand() < 0.22) put(S.reeds, s * between(1.1, 1.6));
           if (rand() < 0.3) put(rand() < 0.82 ? S.cypress : S.snag, s * between(1.7, 5));
         }
-        if (rand() < 0.02) put(S.eyes, side() * between(1.3, 2.4));
+        if (rand() < 0.02) put(S.gator, side() * between(1.3, 2.4));
       } else if (name === "city") {
         if (n % 4 === 0) for (const s of [-1, 1]) put(pick(S.buildings), s * between(1.45, 1.8));
         if (n % 6 === 3) { put(S.pole, -1.15); put(S.pole, 1.15); }
@@ -818,14 +957,13 @@
 
   function volcano(g, w, h) {
     const vx = w * 0.37, vw = w * 0.11;
-    const crater = g.createRadialGradient(vx, h * 0.13, 1, vx, h * 0.13, vw * 0.32);
-    crater.addColorStop(0, "rgba(255, 210, 122, 0.9)");
-    crater.addColorStop(0.3, "rgba(255, 122, 26, 0.55)");
-    crater.addColorStop(1, "rgba(255, 122, 26, 0)");
-    g.fillStyle = crater;
-    g.beginPath();
-    g.arc(vx, h * 0.13, vw * 0.32, 0, Math.PI * 2);
-    g.fill();
+    // The crater glows in the lava colours, which cycle.
+    [[0.34, 2], [0.24, 1], [0.13, 0]].forEach(([r, c]) => {
+      g.fillStyle = CYCLES.lava.colors[c];
+      g.beginPath();
+      g.arc(vx, h * 0.13, vw * r, 0, Math.PI * 2);
+      g.fill();
+    });
     const rim = g.createLinearGradient(0, h * 0.12, 0, h);
     rim.addColorStop(0, "#ff7a1a");
     rim.addColorStop(0.06, "#3a0d24");
@@ -935,6 +1073,17 @@
           g.ellipse(x, h, iw, ih, 0, Math.PI, 0);
           g.fill();
         }
+        // The lighthouse, on an island of its own.
+        const lx = Math.round(w * LIGHTHOUSE), ly = Math.round(h);
+        g.beginPath();
+        g.ellipse(lx, ly, w / 40, h * 0.18, 0, Math.PI, 0);
+        g.fill();
+        for (let i = 0; i < 4; i++) {
+          g.fillStyle = i % 2 ? "#f1e9e4" : "#ff2d6f";
+          g.fillRect(lx - 1, ly - 6 - i * 2, 2, 2);
+        }
+        g.fillStyle = "#fff3d6";
+        g.fillRect(lx - 1, ly - 13, 2, 2);
       }),
       near: layer(lw, nh * 0.6, (g, w, h) => silhouette(g, w, h, h * 0.75, h * 0.08, w / 40, "#1a0e1c", "rgba(255, 122, 26, 0.4)")),
     };
@@ -1023,7 +1172,7 @@
     const { x: x2, y: y2, w: w2 } = seg.p2.screen;
     const color = seg.color;
     const z = seg.p1.world.z;
-    const swell = (Math.floor(seg.index / RUMBLE) + Math.floor(clock * 1.5)) % 2; // waves roll in
+    const swell = Math.floor(seg.index / RUMBLE) % SEA.length; // the palette cycle rolls the waves in
     if (z >= shoreZ) {
       // The end of the road: nothing but sea, with foam where it starts.
       ctx.fillStyle = z < shoreZ + 2 * SEGMENT ? FOAM[0] : SEA[swell];
@@ -1112,16 +1261,64 @@
     for (let i = 0; i < 24; i++) {
       const a = Math.sin(i * 12.9898) * 43758.5453, b = Math.sin(i * 78.233) * 12543.1;
       const fx = a - Math.floor(a), fy = b - Math.floor(b);
-      const x = (((fx * W + Math.sin(clock * 0.4 + i) * 40 * dpr) % W) + W) % W;
-      const y = horizon + fy * (carBottom - horizon) * 0.8 + Math.sin(clock * 0.9 + i * 2.1) * 14 * dpr;
+      const x = Math.round((((fx * W + Math.sin(clock * 0.4 + i) * 10) % W) + W) % W);
+      const y = Math.round(horizon + fy * (carBottom - horizon) * 0.8 + Math.sin(clock * 0.9 + i * 2.1) * 4);
       const glow = (0.5 + 0.5 * Math.sin(clock * 2.3 + i * 1.7)) * amount;
-      const r = (1.5 + fy * 2.5) * dpr; // the nearer ones sit lower and look bigger
-      ctx.fillStyle = `rgba(150, 255, 60, ${0.1 * glow})`;
-      ctx.beginPath(); ctx.arc(x, y, r * 2, 0, Math.PI * 2); ctx.fill();
-      ctx.fillStyle = `rgba(220, 255, 110, ${0.9 * glow})`;
-      ctx.beginPath(); ctx.arc(x, y, r * 0.6, 0, Math.PI * 2); ctx.fill();
+      // One bright pixel; the nearer ones (lower down) get a dim cross around it.
+      if (fy > 0.5) {
+        ctx.fillStyle = `rgba(150, 255, 60, ${0.35 * glow})`;
+        ctx.fillRect(x - 1, y, 3, 1);
+        ctx.fillRect(x, y - 1, 1, 3);
+      }
+      ctx.fillStyle = `rgba(230, 255, 120, ${glow})`;
+      ctx.fillRect(x, y, 1, 1);
     }
     ctx.restore();
+  }
+
+  // A parrot crosses the jungle sky now and then.
+  function drawParrot(amount) {
+    const p = (clock / 13) % 1;
+    if (amount <= 0.01 || p > 0.6) return;
+    ctx.globalAlpha = amount;
+    ctx.drawImage(parrot[Math.floor(clock * 8) % 2], Math.round((p / 0.6) * 1.3 * W - 0.15 * W), Math.round(horizon * 0.42 + Math.sin(clock * 2.5) * 2));
+    ctx.globalAlpha = 1;
+  }
+
+  // The lighthouse on the far island at the beach sweeps its beam across the horizon.
+  const LIGHTHOUSE = 0.72; // across the far layer
+  function drawBeam(alpha) {
+    if (alpha <= 0.01) return;
+    const img = layers[BIOMES.length - 1].far, lw = img.width;
+    const x0 = -(((offsets.far % 1) + 1) % 1) * lw, y = horizon - img.height + 1 + (img.height - 12);
+    const c = Math.cos(clock * 1.3), len = W * 0.45 * c;
+    if (Math.abs(c) < 0.08) return;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = `rgba(255, 243, 214, ${0.22 * Math.abs(c) * alpha})`;
+    for (const bx of [x0 + LIGHTHOUSE * lw, x0 + (1 + LIGHTHOUSE) * lw]) {
+      if (bx + Math.min(0, len) > W || bx + Math.max(0, len) < 0) continue;
+      ctx.beginPath();
+      ctx.moveTo(bx, y);
+      ctx.lineTo(bx + len, y - 2 - Math.abs(c) * 3);
+      ctx.lineTo(bx + len, y + 2 + Math.abs(c) * 3);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // City traffic: a few cars in the left lane at a steady pace, minding their own business.
+  const busy = [];
+  function placeTraffic() {
+    for (const seg of busy) seg.dyn = null;
+    busy.length = 0;
+    const a = bounds[2] * SEGMENT, len = (bounds[3] - bounds[2]) * SEGMENT;
+    for (let i = 0; i < 4; i++) {
+      const seg = segments[Math.floor((a + ((i / 4 + (clock * 1600) / len) % 1) * len) / SEGMENT)];
+      if (!seg.dyn) { seg.dyn = []; busy.push(seg); }
+      seg.dyn.push({ img: SPRITES.traffic, offset: -0.62, center: true });
+    }
   }
 
   // The side view, for the opening (jungle, door still open) and the ending (the beach).
@@ -1135,30 +1332,55 @@
     drawSun(1);
     const far = layers[k].far;
     drawWrapped(far, offsets.far, horizon - far.height + 1);
+    if (k === BIOMES.length - 1) drawBeam(1);
+    else drawParrot(1);
     const plant = (img, x, bottom, height) => {
       const h = height, w = (img.world.w / img.world.h) * h;
       ctx.drawImage(img, x - w / 2, bottom - h, w, h);
     };
     if (k === BIOMES.length - 1) {
-      // The ocean, from the horizon down to the sand the car is parked on.
-      const shore = carBottom - 9 * S;
-      ctx.fillStyle = SEA[1];
-      ctx.fillRect(0, horizon, W, shore - horizon);
-      ctx.fillStyle = SEA[0];
-      for (let i = 0; i < 14; i++) {
-        const p = ((i + clock * 0.25) % 14) / 14; // swell lines, closer together toward the horizon
-        ctx.fillRect(0, horizon + (shore - horizon) * p * p, W, Math.max(1, 3 * p * dpr));
-      }
-      ctx.fillStyle = "rgba(255, 122, 26, 0.35)"; // the sun on the water
+      // The ocean, from the horizon down to the sand the car is parked on: calm, a smooth
+      // gradient (not the cycling sea colours), with a few still lines for texture.
+      const shore = carBottom - 9 * S, sea = shore - horizon;
+      const water = ctx.createLinearGradient(0, horizon, 0, shore);
+      water.addColorStop(0, "#2a2a5e");
+      water.addColorStop(1, "#16163a");
+      ctx.fillStyle = water;
+      ctx.fillRect(0, horizon, W, sea);
+      ctx.fillStyle = "#232458";
+      for (const p of [0.08, 0.2, 0.36, 0.56]) ctx.fillRect(0, Math.round(horizon + sea * p), W, 1);
+      ctx.fillStyle = "rgba(255, 122, 26, 0.3)"; // the sun on the water, barely moving
       for (let i = 1; i < 8; i++) {
-        const y = horizon + (shore - horizon) * (i / 8) ** 1.5, half = W * 0.06 * (1 - i / 10) * (0.8 + 0.2 * Math.sin(clock * 2 + i));
-        ctx.fillRect(W / 2 - half, y, half * 2, Math.max(1, i * 0.6 * dpr));
+        const y = horizon + sea * (i / 8) ** 1.5, half = W * 0.06 * (1 - i / 10) * (0.92 + 0.08 * Math.sin(clock * 0.6 + i));
+        ctx.fillRect(Math.round(W / 2 - half), Math.round(y), Math.round(half * 2), 1);
       }
-      const wash = Math.sin(clock * 0.8) * 1.5 * S;
-      ctx.fillStyle = FOAM[0];
-      ctx.fillRect(0, shore - S + wash, W, 1.5 * S);
+      // Now and then a wave: one long, soft line that rolls slowly toward the shore, gets
+      // lighter as it comes, and breaks gently just before the sand.
+      for (let i = 0; i < 3; i++) {
+        const t = clock / 14 + i / 3, p = t % 1, round = Math.floor(t);
+        if (p > 0.9) continue;
+        const h = Math.abs(Math.sin(round * 12.9898 + i * 78.233) * 43758.5453) % 1;
+        const y = Math.round(horizon + sea * (0.3 + 0.7 * p ** 1.3));
+        const len = Math.round(W * (0.12 + 0.22 * p)), x = Math.round(W * (0.1 + 0.8 * h) - len / 2);
+        const fade = Math.min(1, p / 0.15, (0.9 - p) / 0.1);
+        ctx.globalAlpha = fade;
+        ctx.fillStyle = p > 0.8 ? FOAM[0] : p > 0.45 ? "#8a90d0" : "#4a4f9a";
+        ctx.fillRect(x, y, len, 1);
+        if (p > 0.45) ctx.fillRect(x + 3, y - 1, len - 6, 1);
+        ctx.globalAlpha = 1;
+      }
+      // The shore: foam runs up the sand now and then and drains back, leaving it wet.
       ctx.fillStyle = BIOMES[k].grass[0];
-      ctx.fillRect(0, shore + 0.5 * S + wash, W, Hh);
+      ctx.fillRect(0, shore, W, Hh);
+      ctx.fillStyle = BIOMES[k].grass[1];
+      ctx.fillRect(0, shore, W, 4 * S);
+      const run = Math.max(0, Math.sin(clock * 0.45)) * 3 * S;
+      ctx.fillStyle = FOAM[0];
+      ctx.fillRect(0, shore - 1, W, 1);
+      for (let x = 0; x < W; x += 4) {
+        const reach = Math.round(run + Math.sin(x * 0.12 + clock * 0.5) * S);
+        if (reach > 0) ctx.fillRect(x, shore, 4, reach);
+      }
       plant(SPRITES.palm, W * 0.08, carBottom + 4 * S, 90 * S);
       plant(SPRITES.palm, W * 0.93, carBottom + 2 * S, 75 * S);
     } else {
@@ -1181,6 +1403,21 @@
     }
     ctx.restore();
   }
+
+  // Traffic: the same model in teal, seen from behind, cut out once.
+  SPRITES.traffic = (() => {
+    renderCar({ yaw: 0, roll: 0, steer: 0, door: 0, dist: 11, brake: 0, body: [40, 140, 150] });
+    let x0 = CAR_PX.w, y0 = CAR_PX.h, x1 = 0, y1 = 0;
+    for (let y = 0; y < CAR_PX.h; y++) for (let x = 0; x < CAR_PX.w; x++) {
+      if (!carPixels[y * CAR_PX.w + x]) continue;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    const c = document.createElement("canvas");
+    c.width = x1 - x0 + 1; c.height = y1 - y0 + 1;
+    c.getContext("2d").drawImage(carCanvas, x0, y0, c.width, c.height, 0, 0, c.width, c.height);
+    c.world = { w: 1150, h: (1150 * c.height) / c.width };
+    return c;
+  })();
 
   // The car on the main canvas, with its shadow, underglow and brake lights. The camera
   // orbits it in the opening; at the end the car itself steers right and turns to park
@@ -1261,6 +1498,8 @@
     drawSun(ending);
     drawLayer(k, "far", 1 - t, offsets.far);
     drawLayer(k2, "far", t, offsets.far);
+    drawBeam(k === BIOMES.length - 1 ? 1 : k2 === BIOMES.length - 1 ? t : 0);
+    drawParrot(k === 0 ? 1 - t : 0);
     drawLayer(k, "near", (1 - t) * (1 - ending), offsets.near);
     drawLayer(k2, "near", t * (1 - ending), offsets.near);
     ctx.fillStyle = fogColor;
@@ -1286,15 +1525,20 @@
 
     drawHeadlights(base, 1 - Math.max(swing, smoothstep(0.1, 0.6, outro)));
 
+    placeTraffic();
+
     // Sprites back to front, clipped by the hill crest in front of them. Nothing grows on the sand.
     for (let n = DRAW - 1; n > 0; n--) {
       const seg = segments[(base.index + n) % segments.length];
       if (seg.p1.camera.z <= DEPTH || seg.p1.world.z > sandZ) continue;
       const scale = seg.p1.screen.scale;
-      for (const sprite of seg.sprites) {
-        const sx = seg.p1.screen.x + scale * sprite.offset * ROAD_WIDTH * unitX;
-        if (sprite.img.flicker && !reduce) ctx.globalAlpha = flicker(seg.index);
-        drawSprite(sprite.img, sprite.offset, scale, sx, seg.p1.screen.y, seg.clip);
+      for (const sprite of seg.dyn ? seg.sprites.concat(seg.dyn) : seg.sprites) {
+        // Animated sprites have frames; the alligator surfaces now and then.
+        const img = Array.isArray(sprite.img) ? sprite.img[Math.sin(clock * 0.6 + seg.index) > 0.55 ? 1 : 0] : sprite.img;
+        let sx = seg.p1.screen.x + scale * sprite.offset * ROAD_WIDTH * unitX;
+        if (sprite.center) sx -= (img.world.w * scale * unitX) / 2;
+        if (img.flicker && !reduce) ctx.globalAlpha = flicker(seg.index);
+        drawSprite(img, sprite.center ? 1 : sprite.offset, scale, sx, seg.p1.screen.y, seg.clip);
         ctx.globalAlpha = 1;
       }
     }
@@ -1302,6 +1546,7 @@
     if (!reduce) drawFireflies((k === 0 ? 1 : k === 1 ? 1 - t : 0) * (1 - Math.min(1, speed / 3000)) * (1 - swing));
     if (swing > 0) drawSideScene(swingBiome, swing);
     drawCar();
+    applyPalette();
 
     if (!reduce) placeBillboards(base);
   }
@@ -1357,9 +1602,11 @@
   }
 
   // ---- Sizing ----
-  let dpr = 1, vw = 0, vh = 0, ceiling = 0, portrait = false;
+  // dpr: canvas pixels per CSS pixel. The world is drawn at one canvas pixel per art pixel
+  // (PIX CSS pixels) and scaled up crisp, so everything shares the car's pixel grid.
+  let dpr = 1, PIX = 4, vw = 0, vh = 0, ceiling = 0, portrait = false;
   let playerZ = 1000;              // how far ahead of the camera the car is
-  let carScale = 4, carBottom = 0; // device pixels per car pixel; where the wheels touch the road
+  let carScale = 1, carBottom = 0; // canvas pixels per car pixel; where the wheels touch the road
   let measured = false;
 
   function resize() {
@@ -1369,19 +1616,25 @@
     const aim = measured ? indexAt(target) : current;
     vw = window.innerWidth;
     vh = window.innerHeight;
-    dpr = Math.min(window.devicePixelRatio || 1, vw < 700 ? 1.5 : 2);
-    W = canvas.width = Math.round(vw * dpr);
-    Hh = canvas.height = Math.round(vh * dpr);
+    // The car: about a fifth of the width, smaller on short screens, parked just above the HUD.
+    // It is about 64 art pixels wide, which sets the pixel size; phones get chunkier pixels.
+    const short = vh < 520;
+    const carW = clamp(Math.min(vw * 0.22, vh * (short ? 0.3 : 0.4)), short ? 100 : 140, 420);
+    PIX = Math.max(vw < 500 ? 3 : 2, Math.round(carW / 64));
+    dpr = 1 / PIX;
+    W = canvas.width = Math.ceil(vw * dpr);
+    Hh = canvas.height = Math.ceil(vh * dpr);
+    canvas.style.width = `${W * PIX}px`;
+    canvas.style.height = `${Hh * PIX}px`;
+    root.style.setProperty("--pix", `${PIX}px`);
+    ctx.imageSmoothingEnabled = false;
+    CAR_PX.f = (265 * carW) / PIX / 62;
     portrait = Hh > W;
     horizon = Math.round(Hh * (portrait ? 0.58 : 0.56));
     // Same scale on both axes in portrait, so phones get a wide road instead of a tall one.
     unitX = portrait ? W * 0.5 : W / 2;
     unitY = portrait ? unitX : Hh / 2;
-    // The car: about a fifth of the width, smaller on short screens, parked just above the HUD.
-    const short = vh < 520;
     const hudH = reduce ? 0 : hud.bar.offsetHeight;
-    const carW = clamp(Math.min(vw * 0.22, vh * (short ? 0.3 : 0.4)), short ? 100 : 140, 420);
-    carScale = (carW / 64) * dpr;
     carBottom = Math.round((vh - hudH - 6) * dpr);
     playerZ = (DEPTH * CAM_HEIGHT * unitY) / Math.max(1, carBottom - horizon);
     buildBackground();
@@ -1540,7 +1793,7 @@
   function stepIntro(now) {
     const t = (now - intro.t0) / 1000;
     doorAngle = DOOR_OPEN * (1 - smoothstep(0.45, 0.75, t) ** 2);
-    shake = t > 0.75 && t < 0.92 ? Math.sin(t * 80) * carScale * 0.4 : 0;
+    shake = t > 0.75 && t < 0.92 ? Math.round(Math.sin(t * 80)) : 0;
     introSide = t < 1.0 ? 1 : 1 - smootherstep(clamp((t - 1.0) / 1.7, 0, 1));
     if (t > 2.8) endIntro();
   }
@@ -1757,7 +2010,6 @@
 
   // Fonts and the photo change board sizes: measure again once they are in.
   document.fonts.ready.then(() => {
-    for (const s of SPRITES.neon) s.draw(s.getContext("2d"), s.width, s.height);
     resize();
   });
   for (const img of world.querySelectorAll("img")) if (!img.complete) img.addEventListener("load", resize);
