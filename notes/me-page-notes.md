@@ -496,3 +496,38 @@ Open:
 - Pixel art could use a second pass (faces, more frames for steering).
 - (Resolved: the "car drove on its own" moment in the first test run was the author trying it
   out at the same time.)
+
+### v3.4: a 3D car, a real orbit and a driving turn (2026-10-26)
+
+Checkpoint before this: commit `ebfd0c4`, tag `me-v3.3` (local only). If the transitions
+don't feel better, that is the version to go back to.
+
+Feedback on v3.3: feels good. Improve the side-to-back transition at the start and the
+back-to-side one at the end ("a driving turn or a camera transition"); make the car a cool
+sports car.
+
+Interview decisions (locked):
+- **Car:** a made-up synthwave concept car: a low wedge, neon trim (magenta shoulders, cyan
+  sills), an underglow, a rear wing, a scissor door. Targa roof with two people in it.
+- **Technique:** a low-poly 3D model (about 150 flat-shaded faces), rasterised every frame
+  into a 220 x 120 pixel buffer with a depth buffer, and scaled up crisp. Pixel art that can
+  turn: correct from every angle, no sorting glitches.
+- **Ending:** a driving turn. Over the last stretch the car steers right and turns 90 degrees
+  to park along the shore; the camera backs off and the scenery fades to the side view.
+  Driven by position, so scrolling back reverses it.
+
+How it works:
+- Opening: the passenger's scissor door swings down and shuts, the car rocks, then the camera
+  orbits from the right side round to the back (about 2.8 s). The side view shows the right
+  side because the nose points right.
+- Driving: the car yaws into curves and leans out of them; the front wheels steer. Brake
+  lights and headlights as before.
+- The car is anchored by its lowest tyre contact point, so perspective never pushes it into
+  the HUD.
+
+Checked: opening and ending captured frame by frame; steering in curves; 60 fps on the phone
+viewport with 4x CPU throttling (16.7 ms average, max 17.7 ms); reduced motion has no errors.
+
+Open:
+- The model is simple; candidates for a second pass: a smoother nose, mirrors, visible
+  steering wheel, hair that moves at speed.

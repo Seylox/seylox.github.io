@@ -414,100 +414,264 @@
 
   for (const s of SPRITES.neon) s.flicker = true;
 
-  // ---- The car: pixel art, drawn small once and scaled up crisp. A generic 80s convertible. ----
+  // ---- The car: a low-poly model, rasterised every frame into a small pixel buffer (with a
+  // depth buffer, so it is right from every angle) and scaled up crisp: pixel art that can
+  // turn. A made-up synthwave concept car: a low wedge with a targa roof, neon trim, a
+  // scissor door and an underglow. Two people in it. ----
   const CAR = {
-    red: "#e8283c", dark: "#9c1428", light: "#ff8080", black: "#120a14", grey: "#3a3040", steel: "#6a5a70",
-    skin: "#e8b48a", hair: "#3a2418", blonde: "#f0c860", shirt: "#2a6fd0", jeans: "#3a5fa8",
+    body: [88, 48, 134], under: [24, 16, 34], trim: [38, 26, 56], tyre: [24, 20, 30], rim: [132, 122, 162],
+    seat: [34, 26, 46], skin: [232, 180, 138], hair: [58, 36, 24], blonde: [240, 200, 96],
+    shirt: [42, 111, 208], top: [200, 60, 112], glass: [122, 215, 255],
+    neon: [255, 61, 127], cyan: [122, 215, 255], head: [255, 243, 196], tail: [160, 24, 44], tailOn: [255, 48, 72],
   };
+  const CAR_PX = { w: 220, h: 120, ground: 100, f: 265, pitch: (10 * Math.PI) / 180 };
+  const carCanvas = document.createElement("canvas");
+  carCanvas.width = CAR_PX.w;
+  carCanvas.height = CAR_PX.h;
+  const cg = carCanvas.getContext("2d");
+  const carImage = cg.createImageData(CAR_PX.w, CAR_PX.h);
+  const carPixels = new Uint32Array(carImage.data.buffer);
+  const carDepth = new Float32Array(CAR_PX.w * CAR_PX.h);
 
-  function pixels(w, h, paint) {
-    const c = document.createElement("canvas");
-    c.width = w; c.height = h;
-    const g = c.getContext("2d");
-    paint((x, y, pw, ph, color) => { g.fillStyle = color; g.fillRect(x, y, pw, ph); });
-    return c;
-  }
+  // Units are metres. x: to the car's right, y: up, z: forward. The origin is on the ground,
+  // under the middle of the car.
+  const CAR_MODEL = (() => {
+    const prims = [];
+    const sub = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]];
+    const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+    // Faces get an outward normal (pointing away from ref) for shading and back-face culling.
+    const add = (pts, color, extra = {}) => {
+      const c = pts.reduce((s, p) => [s[0] + p[0] / pts.length, s[1] + p[1] / pts.length, s[2] + p[2] / pts.length], [0, 0, 0]);
+      let n = [0, 0, 0];
+      pts.forEach((p, i) => {
+        const q = pts[(i + 1) % pts.length];
+        n = [n[0] + (p[1] - q[1]) * (p[2] + q[2]), n[1] + (p[2] - q[2]) * (p[0] + q[0]), n[2] + (p[0] - q[0]) * (p[1] + q[1])];
+      });
+      const len = Math.hypot(...n) || 1;
+      n = n.map((v) => v / len);
+      const ref = extra.ref || [0, 0.4, c[2] * 0.9];
+      if (dot(n, sub(c, ref)) < 0) n = n.map((v) => -v);
+      prims.push({ pts, color, n, cull: true, ...extra });
+    };
+    const line = (pts, color, normal, extra = {}) => prims.push({ pts, color, line: true, normal, ...extra });
+    const box = ([x0, x1], [y0, y1], [z0, z1], color) => {
+      const ref = [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2];
+      [
+        [[x0, y0, z0], [x0, y1, z0], [x0, y1, z1], [x0, y0, z1]],
+        [[x1, y0, z0], [x1, y1, z0], [x1, y1, z1], [x1, y0, z1]],
+        [[x0, y0, z0], [x1, y0, z0], [x1, y0, z1], [x0, y0, z1]],
+        [[x0, y1, z0], [x1, y1, z0], [x1, y1, z1], [x0, y1, z1]],
+        [[x0, y0, z0], [x1, y0, z0], [x1, y1, z0], [x0, y1, z0]],
+        [[x0, y0, z1], [x1, y0, z1], [x1, y1, z1], [x0, y1, z1]],
+      ].forEach((f, i) => add(f, typeof color === "function" ? color(i) : color, { ref }));
+    };
 
-  // From behind, 64 x 32. lean -1, 0 or 1: in curves the body tips over the wheels.
-  const rearCar = (lean, brake) => pixels(64, 32, (px) => {
-    const C = CAR;
-    const shift = (y) => (y < 22 ? Math.round((lean * (22 - y)) / 11) : 0);
-    const row = (y, x0, x1, color) => px(x0 + shift(y), y, x1 - x0 + 1, 1, color);
-    for (let y = 18; y < 32; y++) {
-      px(0, y, 10, 1, C.black); px(54, y, 10, 1, C.black);
-      if (y % 2) { px(1, y, 8, 1, C.grey); px(55, y, 8, 1, C.grey); }
+    // The hull: cross-sections from the tail to the nose. Each one is a six-sided profile:
+    // sill, shoulder and roof edge on both sides. A low wedge.
+    const rings = [
+      [-2.2, 0.94, 0.24, 0.56, 0.68],
+      [-1.7, 1.0, 0.2, 0.58, 0.74],
+      [-0.6, 1.0, 0.2, 0.56, 0.72],
+      [0.6, 0.98, 0.2, 0.52, 0.6],
+      [1.5, 0.94, 0.2, 0.44, 0.5],
+      [2.2, 0.84, 0.22, 0.29, 0.34],
+    ].map(([z, hw, yb, ym, yt]) => [[-hw, yb, z], [-hw, ym, z], [-hw * 0.78, yt, z], [hw * 0.78, yt, z], [hw, ym, z], [hw, yb, z]]);
+    for (let i = 0; i < rings.length - 1; i++) {
+      for (let j = 0; j < 6; j++) {
+        const k = (j + 1) % 6;
+        add([rings[i][j], rings[i][k], rings[i + 1][k], rings[i + 1][j]], j === 5 ? CAR.under : CAR.body);
+      }
     }
-    // Two heads over the headrests: dark hair driving, blonde riding along.
-    row(0, 19, 22, C.hair);
-    for (let y = 1; y < 5; y++) row(y, 18, 23, C.hair);
-    row(1, 41, 44, C.blonde);
-    for (let y = 2; y < 8; y++) row(y, 40, 45, C.blonde);
-    for (let y = 5; y < 9; y++) {
-      row(y, 17, 24, y === 5 ? C.grey : C.black);
-      row(y, 41, 44, y === 5 ? C.grey : C.black);
-    }
-    row(7, 8, 55, C.light);
-    for (let y = 8; y < 11; y++) row(y, 6, 57, C.red);
-    row(11, 6, 57, C.dark);
-    row(12, 3, 60, C.light);
-    row(13, 3, 60, C.red);
-    const lamp = brake ? "#ff3048" : "#a0182a";
-    for (let y = 14; y < 19; y++) {
-      const lit = y % 2 === 0;
-      row(y, 2, 61, C.dark);
-      row(y, 4, 21, lit ? lamp : C.black);
-      row(y, 42, 59, lit ? lamp : C.black);
-      row(y, 22, 41, lit ? C.black : C.grey);
-    }
-    for (let y = 19; y < 22; y++) { row(y, 2, 61, C.dark); row(y, 26, 37, "#d9d2c5"); }
-    for (let x = 28; x < 36; x += 2) row(20, x, x, C.black);
-    px(2, 22, 60, 1, C.steel);
-    px(2, 23, 60, 1, C.grey);
-    px(10, 23, 3, 2, C.steel); px(51, 23, 3, 2, C.steel);
-  });
+    add(rings[0], CAR.body);
+    add(rings[rings.length - 1], CAR.body);
+    const shoulder = (z) => (z > 1.5 ? 0.44 : z > 0.6 ? 0.52 : 0.56);
 
-  // From the side, 104 x 36, facing right. In the opening scene the door is still open.
-  const sideCar = (open) => pixels(104, 36, (px) => {
-    const C = CAR;
-    const top = (x) => (x < 8 ? 17 - (x - 6) : x < 72 ? 15 : Math.round(15 + (x - 72) * 0.18));
-    for (let y = 6; y < 12; y++) px(48, y, 5, 1, C.blonde);
-    for (let y = 5; y < 12; y++) px(54, y, 5, 1, C.hair);
-    px(57, 8, 2, 3, C.skin); px(57, 8, 2, 1, C.black);
-    px(54, 12, 5, 3, C.shirt);
-    for (let x = 6; x <= 100; x++) {
-      const t = top(x), bottom = x < 8 || x > 98 ? 25 : 26;
-      for (let y = t; y <= bottom; y++) px(x, y, 1, 1, y === t ? C.light : y >= 24 ? C.dark : C.red);
+    // Trim on the hull: wheel arches, intakes, the tail-light bar, headlights.
+    for (const s of [-1, 1]) {
+      for (const z of [-1.4, 1.4]) {
+        const pts = [[s * 1.004, 0.2, z + 0.4]];
+        for (let k = 0; k <= 6; k++) {
+          const t = (k / 6) * Math.PI;
+          pts.push([s * 1.004, Math.min(shoulder(z) - 0.03, 0.3 + 0.4 * Math.sin(t)), z + 0.4 * Math.cos(t)]);
+        }
+        pts.push([s * 1.004, 0.2, z - 0.4]);
+        add(pts, CAR.under, { ref: [0, 0.4, z] });
+      }
+      add([[s * 1.004, 0.3, -0.95], [s * 1.004, 0.48, -0.95], [s * 1.004, 0.5, -0.7], [s * 1.004, 0.3, -0.7]], CAR.trim, { ref: [0, 0.4, -0.8] });
     }
-    for (let i = 0; i < 9; i++) px(72 - Math.round(i * 0.75), 14 - i, 1, 1, C.grey); // windscreen frame
-    for (const y of [18, 20, 22]) px(34, y, 10, 1, C.black);                           // air intake
-    for (const wx of [24, 80]) {
-      for (let y = 17; y < 36; y++) {
-        for (let x = wx - 9; x <= wx + 9; x++) {
-          const d = Math.hypot(x - wx, y - 28);
-          if (d <= 7) px(x, y, 1, 1, d <= 1.5 ? C.grey : d <= 4 ? C.steel : C.black);
-          else if (d <= 9 && y <= 28) px(x, y, 1, 1, C.black);
+    add([[-0.8, 0.44, -2.205], [0.8, 0.44, -2.205], [0.8, 0.52, -2.205], [-0.8, 0.52, -2.205]], "tail", { ref: [0, 0.5, 0], glow: true });
+    for (const s of [-1, 1]) add([[s * 0.3, 0.25, 2.205], [s * 0.7, 0.25, 2.205], [s * 0.7, 0.29, 2.205], [s * 0.3, 0.29, 2.205]], CAR.head, { ref: [0, 0.3, 0], glow: true });
+
+    // A rear wing on two struts, and a diffuser with twin exhausts under the tail.
+    box([-0.95, 0.95], [0.86, 0.9], [-2.2, -1.88], CAR.trim);
+    for (const s of [-1, 1]) {
+      box([s * 0.62 - 0.04, s * 0.62 + 0.04], [0.66, 0.86], [-2.1, -1.98], CAR.trim);
+      add([[s * 0.95, 0.8, -2.2], [s * 0.95, 0.96, -2.2], [s * 0.95, 0.96, -1.86], [s * 0.95, 0.8, -1.86]], CAR.trim, { cull: false });
+      box([s * 0.42 - 0.09, s * 0.42 + 0.09], [0.26, 0.36], [-2.26, -2.2], CAR.rim);
+    }
+    add([[-0.9, 0.2, -2.21], [0.9, 0.2, -2.21], [0.9, 0.36, -2.21], [-0.9, 0.36, -2.21]], CAR.under, { ref: [0, 0.3, 0] });
+    line([[-0.95, 0.9, -2.2], [0.95, 0.9, -2.2]], CAR.neon, null);
+
+    // Neon: magenta along the shoulders, cyan along the sills, the tail and the nose.
+    line(rings.map((r) => r[1]), CAR.neon, [-1, 0, 0]);
+    line(rings.map((r) => r[4]), CAR.neon, [1, 0, 0]);
+    line(rings.map((r) => r[0]), CAR.cyan, [-1, 0, 0]);
+    line(rings.map((r) => r[5]), CAR.cyan, [1, 0, 0]);
+    line([rings[0][2], rings[0][3]], CAR.cyan, [0, 0, -1]);
+    line(rings[rings.length - 1].slice(1, 5), CAR.cyan, [0, 0, 1]);
+
+    // Wheels: octagonal drums that stand a little proud of the body; the front pair steers.
+    const wheel = (x, z, tag) => {
+      const r = 0.3, cy = 0.3, out = Math.sign(x), xo = x + out * 0.14, xi = x - out * 0.14;
+      const ring = (xx, rr) => Array.from({ length: 8 }, (_, k) => {
+        const t = (k * Math.PI) / 4 + Math.PI / 8;
+        return [xx, cy + rr * Math.sin(t), z + rr * Math.cos(t)];
+      });
+      const o = ring(xo, r), i = ring(xi, r);
+      const extra = { tag, center: [x, cy, z], ref: [x, cy, z] };
+      add(o, CAR.tyre, extra);
+      add(i, CAR.tyre, extra);
+      for (let k = 0; k < 8; k++) add([o[k], o[(k + 1) % 8], i[(k + 1) % 8], i[k]], CAR.tyre, extra);
+      add(ring(xo + out * 0.004, 0.17), CAR.rim, extra);
+    };
+    for (const x of [-0.92, 0.92]) { wheel(x, -1.4, "rear"); wheel(x, 1.4, "steer"); }
+
+    // The scissor door on the right, hinged at its front top corner; the opening behind it.
+    const doorPts = (x) => [[x, 0.24, -0.45], [x, 0.24, 0.55], [x, 0.52, 0.55], [x, 0.56, -0.45]];
+    add(doorPts(1.006), CAR.under, { tag: "aperture", ref: [0, 0.4, 0] });
+    add(doorPts(1.012), CAR.body, { tag: "door", ref: [0, 0.4, 0], cull: false });
+    line([[1.014, 0.56, -0.45], [1.014, 0.52, 0.55]], CAR.neon, null, { tag: "door" });
+
+    // The cabin: tub, seats, two people, the windscreen and the targa hoop.
+    add([[-0.78, 0.69, -0.62], [0.78, 0.69, -0.62], [0.78, 0.62, 0.55], [-0.78, 0.62, 0.55]], CAR.seat, { cull: false });
+    for (const s of [-1, 1]) {
+      const xs = s > 0 ? [0.22, 0.62] : [-0.62, -0.22];
+      box(xs, [0.69, 0.92], [-0.56, -0.42], CAR.seat);
+      box([xs[0] + 0.02, xs[1] - 0.02], [0.69, 0.88], [-0.42, -0.16], s > 0 ? CAR.top : CAR.shirt);
+    }
+    box([-0.52, -0.32], [0.88, 1.07], [-0.34, -0.14], (i) => (i === 5 ? CAR.skin : CAR.hair));
+    box([0.32, 0.52], [0.88, 1.06], [-0.34, -0.14], (i) => (i === 5 ? CAR.skin : CAR.blonde));
+    box([0.3, 0.54], [0.8, 1.03], [-0.42, -0.32], CAR.blonde);
+    add([[-0.78, 0.6, 0.62], [0.78, 0.6, 0.62], [0.64, 0.92, 0.14], [-0.64, 0.92, 0.14]], CAR.glass, { cull: false, alpha: 0.25 });
+    box([-0.8, -0.72], [0.69, 1.1], [-0.64, -0.56], CAR.trim);
+    box([0.72, 0.8], [0.69, 1.1], [-0.64, -0.56], CAR.trim);
+    box([-0.8, 0.8], [1.04, 1.1], [-0.64, -0.56], CAR.trim);
+    line([[-0.64, 0.92, 0.14], [0.64, 0.92, 0.14]], CAR.cyan, null);
+    line([[-0.8, 1.1, -0.6], [0.8, 1.1, -0.6]], CAR.neon, null);
+    return prims;
+  })();
+
+  const LIGHT = (() => { const v = [-0.4, 0.8, -0.45], l = Math.hypot(...v); return v.map((x) => x / l); })();
+  const pack = (c, k = 1) => ((255 << 24) | (Math.min(255, c[2] * k) << 16) | (Math.min(255, c[1] * k) << 8) | Math.min(255, c[0] * k)) >>> 0;
+
+  // One triangle into the pixel buffer: screen x, y and 1/z per corner; nearer wins.
+  function carTriangle(a, b, c, color, alpha) {
+    const { w, h } = CAR_PX;
+    const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    if (Math.abs(area) < 1e-6) return;
+    const x0 = Math.max(0, Math.floor(Math.min(a[0], b[0], c[0]))), x1 = Math.min(w - 1, Math.ceil(Math.max(a[0], b[0], c[0])));
+    const y0 = Math.max(0, Math.floor(Math.min(a[1], b[1], c[1]))), y1 = Math.min(h - 1, Math.ceil(Math.max(a[1], b[1], c[1])));
+    for (let y = y0; y <= y1; y++) {
+      const py = y + 0.5;
+      for (let x = x0; x <= x1; x++) {
+        const px = x + 0.5;
+        const wa = ((c[0] - b[0]) * (py - b[1]) - (c[1] - b[1]) * (px - b[0])) / area;
+        const wb = ((a[0] - c[0]) * (py - c[1]) - (a[1] - c[1]) * (px - c[0])) / area;
+        const wc = 1 - wa - wb;
+        if (wa < 0 || wb < 0 || wc < 0) continue;
+        const iz = wa * a[2] + wb * b[2] + wc * c[2];
+        const i = y * w + x;
+        if (iz <= carDepth[i]) continue;
+        if (alpha) {
+          const o = carPixels[i];
+          if (!o) { carPixels[i] = (Math.round(alpha * 255) << 24 | (color & 0xffffff)) >>> 0; continue; }
+          const mixc = (s) => Math.round(((o >> s) & 255) * (1 - alpha) + ((color >> s) & 255) * alpha);
+          carPixels[i] = ((255 << 24) | (mixc(16) << 16) | (mixc(8) << 8) | mixc(0)) >>> 0;
+        } else {
+          carPixels[i] = color;
+          carDepth[i] = iz;
         }
       }
     }
-    px(97, 19, 3, 2, "#fff3c4");
-    px(6, 18, 2, 3, "#a0182a");
-    if (open) {
-      for (let y = 16; y < 26; y++) px(45, y, 13, 1, C.black);
-      for (let y = 17; y < 23; y++) px(47, y, 6, 1, C.grey);
-      for (let y = 19; y < 22; y++) px(53, y, 5, 1, C.jeans);
-      for (let y = 13; y < 28; y++) px(58, y, 8, 1, y === 13 ? C.light : y >= 25 ? C.dark : C.red);
-      px(58, 13, 1, 15, C.black);
-    } else {
-      px(44, 15, 1, 11, C.black); px(66, 15, 1, 11, C.black);
-      px(61, 18, 3, 1, C.steel);
-    }
-  });
+  }
 
-  const CAR_FRAMES = {
-    rear: [-1, 0, 1].map((lean) => [rearCar(lean, false), rearCar(lean, true)]),
-    open: sideCar(true),
-    closed: sideCar(false),
-  };
+  // A neon line, nudged toward the camera so it wins against the surface it lies on.
+  function carLine(a, b, color) {
+    const { w, h } = CAR_PX;
+    const steps = Math.ceil(Math.max(Math.abs(b[0] - a[0]), Math.abs(b[1] - a[1]))) || 1;
+    for (let s = 0; s <= steps; s++) {
+      const t = s / steps;
+      const x = Math.floor(a[0] + (b[0] - a[0]) * t), y = Math.floor(a[1] + (b[1] - a[1]) * t);
+      if (x < 0 || y < 0 || x >= w || y >= h) continue;
+      const iz = (a[2] + (b[2] - a[2]) * t) * 1.012;
+      const i = y * w + x;
+      if (iz <= carDepth[i]) continue;
+      carPixels[i] = color;
+      carDepth[i] = iz;
+    }
+  }
+
+  // Draws the car into the pixel buffer. yaw 0 shows the tail, pi/2 the right side (nose to
+  // the right). Returns the screen points the glows need.
+  function renderCar({ yaw, roll, steer, door, dist, brake }) {
+    const { w, ground, f, pitch } = CAR_PX;
+    const ca = Math.cos(yaw), sa = Math.sin(yaw), cr = Math.cos(roll), sr = Math.sin(roll);
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const cw = Math.cos(steer), sw = Math.sin(steer), cd = Math.cos(door), sd = Math.sin(door);
+    const turn = ([x, y, z]) => {
+      const xr = x * cr - y * sr, yr = x * sr + y * cr;   // lean
+      const x1 = xr * ca + z * sa, z1 = -xr * sa + z * ca; // heading
+      return [x1, yr * cp + z1 * sp, -yr * sp + z1 * cp];  // looking down a little
+    };
+    const view = (p) => { const v = turn(p); v[2] += dist; return v; };
+    const local = ([x, y, z], prim) => {
+      if (prim.tag === "steer") {
+        const dx = x - prim.center[0], dz = z - prim.center[2];
+        return [prim.center[0] + dx * cw + dz * sw, y, prim.center[2] - dx * sw + dz * cw];
+      }
+      if (prim.tag === "door" && door > 0) {
+        const dy = y - 0.54, dz = z - 0.55;
+        return [x, 0.54 + dy * cd - dz * sd, 0.55 + dy * sd + dz * cd];
+      }
+      return [x, y, z];
+    };
+    const screen = ([x, y, z]) => [w / 2 + (x * f) / z, ground - (y * f) / z, 1 / z];
+    const facing = (n, c) => n[0] * c[0] + n[1] * c[1] + n[2] * c[2] < 0;
+
+    carPixels.fill(0);
+    carDepth.fill(0);
+    const glass = [];
+    for (const prim of CAR_MODEL) {
+      if (prim.tag === "aperture" && door <= 0.02) continue;
+      const pts = prim.pts.map((p) => view(local(p, prim)));
+      const c = pts.reduce((s, p) => [s[0] + p[0] / pts.length, s[1] + p[1] / pts.length, s[2] + p[2] / pts.length], [0, 0, 0]);
+      if (prim.line) {
+        if (prim.normal && !facing(turn(prim.normal), c)) continue;
+        const s = pts.map(screen), color = pack(prim.color);
+        for (let i = 1; i < s.length; i++) carLine(s[i - 1], s[i], color);
+        continue;
+      }
+      const n = turn(prim.n);
+      if (prim.cull && !facing(n, c)) continue;
+      let color;
+      if (prim.color === "tail") color = pack(brake > 0.5 ? CAR.tailOn : CAR.tail);
+      else if (prim.glow) color = pack(prim.color);
+      else color = pack(prim.color, 0.38 + 0.62 * Math.max(0, n[0] * LIGHT[0] + n[1] * LIGHT[1] + n[2] * LIGHT[2]));
+      const s = pts.map(screen);
+      if (prim.alpha) { glass.push([s, color, prim.alpha]); continue; }
+      for (let i = 1; i < s.length - 1; i++) carTriangle(s[0], s[i], s[i + 1], color, 0);
+    }
+    for (const [s, color, alpha] of glass) for (let i = 1; i < s.length - 1; i++) carTriangle(s[0], s[i], s[i + 1], color, alpha);
+    cg.putImageData(carImage, 0, 0);
+
+    const tailFacing = facing(turn([0, 0, -1]), view([0, 0.5, -2.2]));
+    return {
+      // Where the tyres touch the road: the lowest one goes on the car's ground line.
+      contact: Math.max(...[[-0.92, 0, -1.4], [0.92, 0, -1.4], [-0.92, 0, 1.4], [0.92, 0, 1.4]].map((p) => screen(view(p))[1])),
+      footprint: [[-1, 0, -2.1], [1, 0, -2.1], [1, 0, 2.1], [-1, 0, 2.1]].map((p) => screen(view(p))),
+      tail: tailFacing ? [[-0.55, 0.48, -2.21], [0.55, 0.48, -2.21]].map((p) => screen(view(p))) : [],
+    };
+  }
 
   // ---- Track: each biome gets its own kind of road ----
   const segments = [];
@@ -1018,32 +1182,59 @@
     ctx.restore();
   }
 
-  // The car turns on the spot between the views: the rear narrows away, the side grows in.
-  function drawCar(turn) {
-    const S = carScale, bottom = carBottom, cx = W / 2 + shake;
-    ctx.save();
-    ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
-    ctx.beginPath();
-    ctx.ellipse(cx, bottom - S, (32 + 20 * turn) * S, 3 * S, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.imageSmoothingEnabled = false;
-    if (turn < 0.5) {
-      const sx = 1 - 2 * turn, w = 64 * S * sx;
-      ctx.drawImage(CAR_FRAMES.rear[lean + 1][brake > 0.5 ? 1 : 0], cx - w / 2, bottom - 32 * S, w, 32 * S);
-      if (brake > 0.05 && sx > 0.5) {
-        ctx.globalCompositeOperation = "lighter";
-        for (const lx of [13, 51]) {
-          const x = cx - w / 2 + (lx + lean * 0.6) * S * sx, y = bottom - 15.5 * S;
-          const glow = ctx.createRadialGradient(x, y, 0, x, y, 12 * S);
-          glow.addColorStop(0, `rgba(255, 60, 80, ${0.55 * brake})`);
-          glow.addColorStop(1, "rgba(255, 60, 80, 0)");
-          ctx.fillStyle = glow;
-          ctx.fillRect(x - 12 * S, y - 12 * S, 24 * S, 24 * S);
-        }
-      }
+  // The car on the main canvas, with its shadow, underglow and brake lights. The camera
+  // orbits it in the opening; at the end the car itself steers right and turns to park
+  // along the shore, and the camera backs off to take it side-on.
+  function drawCar() {
+    const deg = Math.PI / 180;
+    const turn = smoothstep(0.1, 0.8, outro);
+    let yaw, dist, offX = 0, steerAngle = steer * 20 * deg, roll = steer * 2.5 * deg;
+    if (introSide > 0) {
+      yaw = 90 * deg * introSide;
+      dist = 11 + 3 * introSide;
     } else {
-      const sx = 2 * turn - 1, w = 104 * S * sx;
-      ctx.drawImage(doorOpen ? CAR_FRAMES.open : CAR_FRAMES.closed, cx - w / 2, bottom - 36 * S, w, 36 * S);
+      const arc = Math.sin(Math.PI * smoothstep(0.05, 0.85, outro));
+      yaw = 90 * deg * turn + steer * 6 * deg * (1 - turn);
+      dist = 11 + 3 * smoothstep(0.3, 1, outro);
+      offX = arc * 0.1 * W;
+      steerAngle += Math.sin(Math.PI * smoothstep(0.02, 0.75, outro)) * 28 * deg;
+      roll += Math.sin(Math.PI * smoothstep(0.1, 0.7, outro)) * 3 * deg;
+    }
+    const info = renderCar({ yaw, roll, steer: steerAngle, door: doorAngle, dist, brake });
+
+    const S = carScale, cx = W / 2 + shake + offX, top = carBottom - info.contact * S;
+    const toMain = ([x, y]) => [cx + (x - CAR_PX.w / 2) * S, top + y * S];
+    const fp = info.footprint.map(toMain);
+    const xs = fp.map((p) => p[0]), ys = fp.map((p) => p[1]);
+    const gx = (Math.min(...xs) + Math.max(...xs)) / 2, gy = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const rx = ((Math.max(...xs) - Math.min(...xs)) / 2) * 1.08, ry = Math.max((Math.max(...ys) - Math.min(...ys)) / 2, 3 * S);
+    ctx.save();
+    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+    ctx.beginPath();
+    ctx.ellipse(gx, gy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Underglow: magenta light spilling onto the road.
+    ctx.globalCompositeOperation = "lighter";
+    const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, rx * 1.3);
+    const pulse = reduce ? 1 : 0.85 + 0.15 * Math.sin(clock * 2.2);
+    glow.addColorStop(0, `rgba(255, 61, 127, ${0.32 * pulse})`);
+    glow.addColorStop(1, "rgba(255, 61, 127, 0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.ellipse(gx, gy, rx * 1.3, ry * 2.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalCompositeOperation = "source-over";
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(carCanvas, cx - (CAR_PX.w / 2) * S, top, CAR_PX.w * S, CAR_PX.h * S);
+    if (brake > 0.05 && info.tail.length) {
+      ctx.globalCompositeOperation = "lighter";
+      for (const [x, y] of info.tail.map(toMain)) {
+        const g = ctx.createRadialGradient(x, y, 0, x, y, 14 * S);
+        g.addColorStop(0, `rgba(255, 60, 80, ${0.5 * brake})`);
+        g.addColorStop(1, "rgba(255, 60, 80, 0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(x - 14 * S, y - 14 * S, 28 * S, 28 * S);
+      }
     }
     ctx.restore();
   }
@@ -1093,7 +1284,7 @@
       maxY = seg.p1.screen.y;
     }
 
-    drawHeadlights(base, 1 - swing);
+    drawHeadlights(base, 1 - Math.max(swing, smoothstep(0.1, 0.6, outro)));
 
     // Sprites back to front, clipped by the hill crest in front of them. Nothing grows on the sand.
     for (let n = DRAW - 1; n > 0; n--) {
@@ -1109,8 +1300,8 @@
     }
 
     if (!reduce) drawFireflies((k === 0 ? 1 : k === 1 ? 1 - t : 0) * (1 - Math.min(1, speed / 3000)) * (1 - swing));
-    if (swing > 0) drawSideScene(swingBiome, Math.min(1, swing * 1.6));
-    drawCar(swing);
+    if (swing > 0) drawSideScene(swingBiome, swing);
+    drawCar();
 
     if (!reduce) placeBillboards(base);
   }
@@ -1287,11 +1478,12 @@
   let snapping = false;        // input has happened; park once it pauses
   let dir = 1, lastInput = 0;
   let touch = null;
-  let speed = 0, brake = 0, lean = 0;
+  let speed = 0, brake = 0, steer = 0; // steer: -1 (left) to 1 (right), follows the road
   let current = 0;             // the board the HUD shows
   let parkedAt = -1;           // the board the address bar points at
-  let intro = null, introSide = 0, doorOpen = false, shake = 0;
-  let swing = 0, swingBiome = 0; // how far the camera has swung to the side view, and where
+  let intro = null, introSide = 0, doorAngle = 0, shake = 0;
+  let outro = 0;                  // 0 to 1 over the last stretch: the turn onto the beach
+  let swing = 0, swingBiome = 0;  // how far the scenery has faded to the side view, and where
   let running = false, last = 0, frame = 0;
 
   function pedal(delta) {
@@ -1342,15 +1534,17 @@
   }
 
   // The opening: the door shuts, then the camera swings round behind the car.
-  function startIntro() { intro = { t0: performance.now() }; introSide = 1; doorOpen = true; }
+  // The opening: the scissor door swings down and shuts, then the camera orbits round behind.
+  const DOOR_OPEN = (70 * Math.PI) / 180;
+  function startIntro() { intro = { t0: performance.now() }; introSide = 1; doorAngle = DOOR_OPEN; }
   function stepIntro(now) {
     const t = (now - intro.t0) / 1000;
-    doorOpen = t < 0.7;
-    shake = t > 0.7 && t < 0.9 ? Math.sin(t * 80) * carScale * 0.5 : 0;
-    introSide = t < 1.1 ? 1 : 1 - smootherstep(clamp((t - 1.1) / 1.3, 0, 1));
-    if (t > 2.4) endIntro();
+    doorAngle = DOOR_OPEN * (1 - smoothstep(0.45, 0.75, t) ** 2);
+    shake = t > 0.75 && t < 0.92 ? Math.sin(t * 80) * carScale * 0.4 : 0;
+    introSide = t < 1.0 ? 1 : 1 - smootherstep(clamp((t - 1.0) / 1.7, 0, 1));
+    if (t > 2.8) endIntro();
   }
-  function endIntro() { intro = null; introSide = 0; doorOpen = false; shake = 0; }
+  function endIntro() { intro = null; introSide = 0; doorAngle = 0; shake = 0; }
 
   function tick(now) {
     if (agentView.checked) { running = false; return; }
@@ -1384,13 +1578,15 @@
     const braking = speed > 400 && was - speed > 12000 * dt;
     brake += ((braking ? 1 : 0) - brake) * (1 - Math.exp(-dt * 12));
     const curve = findSegment(position + playerZ).curve;
-    lean = speed > 1500 && Math.abs(curve) > 1 ? Math.sign(curve) : 0;
+    const steerTo = clamp(curve / 5, -1, 1) * Math.min(1, speed / 6000);
+    steer += (steerTo - steer) * (1 - Math.exp(-dt * 5));
     if (speed < 30) speed = 0;
     hud.kmh.textContent = Math.min(KMH_MAX, Math.round(speed * KMH));
 
     const lastStop = boards[boards.length - 1].stopPos;
-    const outro = smoothstep(lastStop - 0.6 * GAP * SEGMENT, lastStop, position);
-    swing = Math.max(introSide, outro);
+    outro = smoothstep(lastStop - 0.7 * GAP * SEGMENT, lastStop, position);
+    // The scenery switches once the car is about halfway round.
+    swing = introSide > 0 ? smoothstep(0.2, 0.75, introSide) : smoothstep(0.45, 0.95, outro);
     swingBiome = introSide > 0 ? 0 : BIOMES.length - 1;
 
     const i = drive ? drive.i : Math.round(indexAt(position));
