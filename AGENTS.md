@@ -2,7 +2,7 @@
 
 ## What this is
 
-The Jekyll source for [seylox.github.io](https://seylox.github.io), Bernd's blog: "Working around the limitations of my intelligence." Posts are about AI agents, software engineering, and working around limitations. Built with the minimal-mistakes theme, published via GitHub Pages from `main`.
+The Jekyll source for [blog.rubbad.uk](https://blog.rubbad.uk), Bernd's blog: "Working around the limitations of my intelligence." Posts are about AI agents, software engineering, and working around limitations. Built with the minimal-mistakes theme, published via GitHub Pages from `main`.
 
 ## Where things live
 

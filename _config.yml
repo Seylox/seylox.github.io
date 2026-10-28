@@ -6,7 +6,7 @@ minimal_mistakes_skin: "sunrise"
 # Site settings
 locale: "en-US"
 description: "A blog about AI agents, software engineering, and working around limitations."
-url: "https://seylox.github.io"
+url: "https://blog.rubbad.uk"
 baseurl: ""
 repository: "Seylox/seylox.github.io"
 og_image: "/assets/images/site-og-image.jpg"

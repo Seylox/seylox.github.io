@@ -1,6 +1,6 @@
 # Writing Guide
 
-Instructions for writing blog posts on seylox.github.io. Intended for both the human author and any AI co-author.
+Instructions for writing blog posts on blog.rubbad.uk. Intended for both the human author and any AI co-author.
 
 ## Voice and Perspective
 
@@ -78,4 +78,4 @@ toc_sticky: true
 
 ## URL Format
 
-Jekyll default: `https://seylox.github.io/YYYY/MM/DD/slug/` (trailing slash, no .html)
+Jekyll default: `https://blog.rubbad.uk/YYYY/MM/DD/slug/` (trailing slash, no .html)
